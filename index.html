@@ -167,13 +167,13 @@
         // استخدام window.storage لحفظ البيانات للجميع
         async function loadScripts() {
             try {
-                const result = await window.storage.list('script:');
+                const result = await window.storage.list('script:', true);
                 if (!result || !result.keys) return [];
                 
                 const scripts = [];
                 for (const key of result.keys) {
                     try {
-                        const data = await window.storage.get(key);
+                        const data = await window.storage.get(key, true);
                         if (data && data.value) {
                             scripts.push(JSON.parse(data.value));
                         }
@@ -190,12 +190,13 @@
 
         async function saveScript(script) {
             try {
-                const key = `script:${script.id}`;
-                await window.storage.set(key, JSON.stringify(script), true);
+                const key = `script_${script.id}`;
+                const result = await window.storage.set(key, JSON.stringify(script), true);
+                console.log('Script saved:', result);
                 return true;
             } catch (error) {
                 console.error('Error saving script:', error);
-                alert('حدث خطأ في حفظ السكربت');
+                alert('حدث خطأ في حفظ السكربت: ' + error.message);
                 return false;
             }
         }
@@ -203,7 +204,7 @@
         async function deleteScript(id) {
             if (!confirm('هل أنت متأكد من حذف هذا السكربت؟')) return;
             try {
-                await window.storage.delete(`script:${id}`, true);
+                await window.storage.delete(`script_${id}`, true);
                 selectedScript = null;
                 currentPage = 'home';
                 await renderPage();
@@ -216,7 +217,7 @@
 
         async function updateScriptStats(id, type) {
             try {
-                const key = `script:${id}`;
+                const key = `script_${id}`;
                 const result = await window.storage.get(key, true);
                 if (result && result.value) {
                     const script = JSON.parse(result.value);
