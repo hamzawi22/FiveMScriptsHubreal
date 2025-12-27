@@ -78,15 +78,15 @@
         const DISCORD_CLIENT_ID = '1454211006866657384';
         const REDIRECT_URI = window.location.origin + window.location.pathname;
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDbW67rYjVnUdzoF9FvfLJypGi_MF9nQjg",
-            authDomain: "login-system-124a6.firebaseapp.com",
-            projectId: "login-system-124a6",
-            storageBucket: "login-system-124a6.firebasestorage.app",
-            messagingSenderId: "667998653226",
-            appId: "1:667998653226:web:bc4a96a2dbbd22cf386c53",
-            measurementId: "G-42NY348NXE"
-        };
+     const firebaseConfig = {
+    apiKey: "AIzaSyDbW67rYjVnUdzoF9FvfLJypGi_MF9nQjg", 
+    authDomain: "freefivemscript.firebaseapp.com",
+    projectId: "freefivemscript",
+    storageBucket: "freefivemscript.firebasestorage.app",
+    messagingSenderId: "667998653226", // تأكد من هذا الرقم من إعدادات Firebase
+    appId: "1:667998653226:web:bc4a96a2dbbd22cf386c53", // تأكد من هذا المعرف من إعدادات Firebase
+    measurementId: "G-42NY348NXE"
+};
 
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
