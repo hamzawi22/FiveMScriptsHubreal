@@ -10,22 +10,136 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap');
         * { font-family: 'Cairo', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #020617; color: #f8fafc; min-height: 100vh; overflow-y: auto; }
-        .bg-glow { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 50% -20%, #312e81, #020617 70%); z-index: -1; }
-        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .btn-primary { background: linear-gradient(135deg, #9333ea, #c026d3); transition: all 0.3s ease; }
-        .fade-in { animation: fadeIn 0.4s ease forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 10px; }
+        body { 
+            background: linear-gradient(135deg, #0a0118 0%, #1a0b2e 50%, #2d1b4e 100%);
+            color: #f8fafc; 
+            min-height: 100vh; 
+            overflow-x: hidden;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(147, 51, 234, 0.15), transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(192, 38, 211, 0.15), transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.1), transparent 50%);
+            animation: rotate 25s linear infinite;
+            z-index: -1;
+        }
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .glass { 
+            background: rgba(10, 1, 24, 0.6); 
+            backdrop-filter: blur(30px) saturate(200%); 
+            border: 1px solid rgba(147, 51, 234, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(147, 51, 234, 0.15);
+        }
+        .glass:hover {
+            border-color: rgba(147, 51, 234, 0.5);
+            box-shadow: 0 12px 40px 0 rgba(147, 51, 234, 0.25);
+        }
+        .btn-primary { 
+            background: linear-gradient(135deg, #9333ea 0%, #c026d3 50%, #e879f9 100%);
+            box-shadow: 0 10px 40px rgba(147, 51, 234, 0.4);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.6s;
+        }
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+        .btn-primary:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 20px 60px rgba(147, 51, 234, 0.6);
+        }
+        .fade-in { animation: fadeIn 0.8s ease forwards; }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(30px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        .slide-up { animation: slideUp 0.6s ease forwards; }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: rgba(10, 1, 24, 0.5); }
+        ::-webkit-scrollbar-thumb { 
+            background: linear-gradient(135deg, #9333ea, #c026d3);
+            border-radius: 10px; 
+        }
+        .card-hover {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover:hover {
+            transform: translateY(-12px) scale(1.03);
+            box-shadow: 0 25px 60px rgba(147, 51, 234, 0.4);
+        }
+        .logo-glow {
+            text-shadow: 
+                0 0 20px rgba(147, 51, 234, 0.8),
+                0 0 40px rgba(192, 38, 211, 0.6),
+                0 0 60px rgba(147, 51, 234, 0.4);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        .floating {
+            animation: floating 4s ease-in-out infinite;
+        }
+        @keyframes floating {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(5deg); }
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #9333ea, #c026d3, #e879f9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .shine {
+            position: relative;
+            overflow: hidden;
+        }
+        .shine::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shine 3s infinite;
+        }
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
     </style>
 </head>
 <body>
-    <div class="bg-glow"></div>
     <div id="app"></div>
 
     <script>
-        // 1. الإعدادات
         const ADMIN_EMAIL = 'obywawi@gmail.com';
         const DISCORD_CLIENT_ID = '1454211006866657384';
         const firebaseConfig = {
@@ -40,40 +154,149 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
-        // 2. الحالة
         let currentUser = null;
-        let scripts = JSON.parse(localStorage.getItem('hub_scripts')) || [];
         let showAuth = false;
+        let authMode = 'choose';
         let showUpload = false;
-        let showDetails = null;
         let currentPage = 'home';
         let activeCategory = 'all';
+        let selectedScript = null;
         let uploadForm = { title: '', description: '', category: 'scripts', mediaType: 'none', youtubeUrl: '', file: null, image: null };
+        let emailForm = { email: '', password: '' };
 
-        // 3. وظيفة تسجيل الدخول
+        // استخدام window.storage لحفظ البيانات للجميع
+        async function loadScripts() {
+            try {
+                const result = await window.storage.list('script:');
+                if (!result || !result.keys) return [];
+                
+                const scripts = [];
+                for (const key of result.keys) {
+                    try {
+                        const data = await window.storage.get(key);
+                        if (data && data.value) {
+                            scripts.push(JSON.parse(data.value));
+                        }
+                    } catch (e) {
+                        console.log('Key not found:', key);
+                    }
+                }
+                return scripts.sort((a, b) => new Date(b.date) - new Date(a.date));
+            } catch (error) {
+                console.error('Error loading scripts:', error);
+                return [];
+            }
+        }
+
+        async function saveScript(script) {
+            try {
+                const key = `script:${script.id}`;
+                await window.storage.set(key, JSON.stringify(script), true);
+                return true;
+            } catch (error) {
+                console.error('Error saving script:', error);
+                alert('حدث خطأ في حفظ السكربت');
+                return false;
+            }
+        }
+
+        async function deleteScript(id) {
+            if (!confirm('هل أنت متأكد من حذف هذا السكربت؟')) return;
+            try {
+                await window.storage.delete(`script:${id}`, true);
+                selectedScript = null;
+                currentPage = 'home';
+                await renderPage();
+                alert('تم حذف السكربت بنجاح');
+            } catch (error) {
+                console.error('Error deleting script:', error);
+                alert('حدث خطأ في الحذف');
+            }
+        }
+
+        async function updateScriptStats(id, type) {
+            try {
+                const key = `script:${id}`;
+                const result = await window.storage.get(key, true);
+                if (result && result.value) {
+                    const script = JSON.parse(result.value);
+                    if (!script.stats.viewedBy) script.stats.viewedBy = [];
+                    if (!script.stats.downloadedBy) script.stats.downloadedBy = [];
+                    
+                    if (currentUser) {
+                        if (type === 'view' && !script.stats.viewedBy.includes(currentUser.uid)) {
+                            script.stats.viewedBy.push(currentUser.uid);
+                            script.stats.views = (script.stats.views || 0) + 1;
+                        } else if (type === 'download' && !script.stats.downloadedBy.includes(currentUser.uid)) {
+                            script.stats.downloadedBy.push(currentUser.uid);
+                            script.stats.downloads = (script.stats.downloads || 0) + 1;
+                        }
+                        await window.storage.set(key, JSON.stringify(script), true);
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating stats:', error);
+            }
+        }
+
         auth.onAuthStateChanged(user => {
             if (user) {
                 const localData = JSON.parse(localStorage.getItem('u_data_' + user.uid)) || { 
-                    name: user.displayName || "User", 
-                    img: user.photoURL || "https://ui-avatars.com/api/?name=User", 
+                    name: user.displayName || user.email?.split('@')[0] || "User", 
+                    img: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || 'User')}&background=9333ea&color=fff&bold=true`, 
                     nameChanged: false 
                 };
                 currentUser = { uid: user.uid, email: user.email, ...localData };
-            } else { currentUser = null; }
-            render();
+            } else { 
+                currentUser = null; 
+            }
+            renderPage();
         });
 
-        function loginGoogle() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => showAuth = false); }
+        function loginGoogle() { 
+            auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+                .then(() => { showAuth = false; renderPage(); })
+                .catch(err => alert('خطأ في تسجيل الدخول: ' + err.message));
+        }
 
-        // دالة الديسكورد (تستخدم OAuth2 الرابط المباشر)
         function loginDiscord() {
             const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
             const scope = encodeURIComponent('identify email');
-            const discordUrl = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=token&scope=${scope}`;
-            window.location.href = discordUrl;
+            window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=token&scope=${scope}`;
         }
 
-        // معالجة العودة من الديسكورد (Token)
+        function loginEmail() {
+            if (!emailForm.email || !emailForm.password) {
+                alert('يرجى إدخال البريد الإلكتروني وكلمة المرور');
+                return;
+            }
+            auth.signInWithEmailAndPassword(emailForm.email, emailForm.password)
+                .then(() => {
+                    showAuth = false;
+                    emailForm = { email: '', password: '' };
+                    renderPage();
+                })
+                .catch(err => alert('خطأ: ' + err.message));
+        }
+
+        function signupEmail() {
+            if (!emailForm.email || !emailForm.password) {
+                alert('يرجى إدخال البريد الإلكتروني وكلمة المرور');
+                return;
+            }
+            if (emailForm.password.length < 6) {
+                alert('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+                return;
+            }
+            auth.createUserWithEmailAndPassword(emailForm.email, emailForm.password)
+                .then(() => {
+                    showAuth = false;
+                    emailForm = { email: '', password: '' };
+                    renderPage();
+                })
+                .catch(err => alert('خطأ: ' + err.message));
+        }
+
         window.onload = () => {
             const fragment = new URLSearchParams(window.location.hash.slice(1));
             const accessToken = fragment.get('access_token');
@@ -89,12 +312,11 @@
                         displayName: data.global_name || data.username,
                         photoURL: `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png`
                     };
-                    // محاكاة تسجيل الدخول في الموقع باستخدام بيانات ديسكورد
                     const localData = { name: discordUser.displayName, img: discordUser.photoURL, nameChanged: false };
                     localStorage.setItem('u_data_' + discordUser.uid, JSON.stringify(localData));
                     currentUser = { ...discordUser, ...localData };
-                    window.location.hash = ""; // تنظيف الرابط
-                    render();
+                    window.location.hash = "";
+                    renderPage();
                 });
             }
         };
@@ -103,7 +325,8 @@
             auth.signOut().then(() => {
                 currentUser = null;
                 currentPage = 'home';
-                render();
+                selectedScript = null;
+                renderPage();
             });
         }
 
@@ -116,36 +339,39 @@
             if (newImgBase64) data.img = newImgBase64;
             localStorage.setItem('u_data_' + currentUser.uid, JSON.stringify(data));
             currentUser = { ...currentUser, ...data };
-            alert("تم التحديث بنجاح");
-            render();
+            alert("تم التحديث بنجاح ✓");
+            renderPage();
         }
 
         function handleFile(e, type) {
             const file = e.target.files[0];
+            if (!file) return;
             const reader = new FileReader();
             reader.onload = (ev) => {
                 if(type === 'profile') updateProfile(null, ev.target.result);
-                if(type === 'upload_img') { uploadForm.image = ev.target.result; render(); }
+                if(type === 'upload_img') { uploadForm.image = ev.target.result; renderPage(); }
             };
-            if(file) reader.readAsDataURL(file);
+            reader.readAsDataURL(file);
         }
 
-        function handleView(id) {
-            const s = scripts.find(x => x.id === id);
-            if (!s.stats.viewedBy) s.stats.viewedBy = [];
-            if (currentUser && !s.stats.viewedBy.includes(currentUser.uid)) {
-                s.stats.viewedBy.push(currentUser.uid);
-                s.stats.views = (s.stats.views || 0) + 1;
-                localStorage.setItem('hub_scripts', JSON.stringify(scripts));
+        async function viewScript(scriptId) {
+            const scripts = await loadScripts();
+            const script = scripts.find(s => s.id === scriptId);
+            if (script) {
+                selectedScript = script;
+                currentPage = 'details';
+                await updateScriptStats(scriptId, 'view');
+                renderPage();
             }
-            showDetails = s;
-            render();
         }
 
-        function submitScript() {
-            if (!uploadForm.title || !uploadForm.file) return alert("أكمل البيانات");
+        async function submitScript() {
+            if (!uploadForm.title || !uploadForm.file) {
+                alert("يرجى إدخال العنوان واختيار الملف");
+                return;
+            }
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = async (e) => {
                 const newScript = {
                     id: 'sc_' + Date.now(),
                     title: uploadForm.title,
@@ -156,32 +382,139 @@
                     media: uploadForm.mediaType === 'image' ? { type: 'image', data: uploadForm.image } : 
                            uploadForm.mediaType === 'youtube' ? { type: 'youtube', url: uploadForm.youtubeUrl } : null,
                     stats: { views: 0, downloads: 0, viewedBy: [], downloadedBy: [] },
-                    date: new Date().toISOString()
+                    date: new Date().toISOString(),
+                    author: currentUser.name
                 };
-                scripts.unshift(newScript);
-                localStorage.setItem('hub_scripts', JSON.stringify(scripts));
-                showUpload = false;
-                render();
+                
+                const saved = await saveScript(newScript);
+                if (saved) {
+                    showUpload = false;
+                    uploadForm = { title: '', description: '', category: 'scripts', mediaType: 'none', youtubeUrl: '', file: null, image: null };
+                    alert('تم نشر السكربت بنجاح! ✓');
+                    await renderPage();
+                }
             };
             reader.readAsDataURL(uploadForm.file);
         }
 
-        // 4. الواجهة
-        function render() {
+        async function handleDownload(scriptId) {
+            await updateScriptStats(scriptId, 'download');
+        }
+
+        async function renderPage() {
             const app = document.getElementById('app');
+            const scripts = await loadScripts();
             const filtered = activeCategory === 'all' ? scripts : scripts.filter(s => s.category === activeCategory);
 
+            if (currentPage === 'details' && selectedScript) {
+                app.innerHTML = `
+                    <nav class="glass sticky top-0 z-50 px-6 py-4 border-b border-purple-500/30 shine">
+                        <div class="container mx-auto flex justify-between items-center">
+                            <h1 class="text-3xl font-black gradient-text cursor-pointer logo-glow" onclick="currentPage='home';selectedScript=null;renderPage()">
+                                ⚡ FIVEM HUB
+                            </h1>
+                            <button onclick="currentPage='home';selectedScript=null;renderPage()" class="text-gray-400 hover:text-white transition-all flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                                العودة
+                            </button>
+                        </div>
+                    </nav>
+
+                    <div class="min-h-screen py-12 px-6 fade-in">
+                        <div class="container mx-auto max-w-6xl">
+                            ${selectedScript.media?.type === 'image' ? `
+                                <div class="mb-10 rounded-[3rem] overflow-hidden shadow-2xl shadow-purple-500/30">
+                                    <img src="${selectedScript.media.data}" class="w-full h-[500px] object-cover">
+                                </div>
+                            ` : ''}
+                            ${selectedScript.media?.type === 'youtube' ? `
+                                <div class="mb-10 aspect-video rounded-[3rem] overflow-hidden shadow-2xl shadow-purple-500/30 bg-black">
+                                    <iframe width="100%" height="100%" src="https://www.youtube.com/embed/${selectedScript.media.url.includes('v=') ? selectedScript.media.url.split('v=')[1].split('&')[0] : selectedScript.media.url.split('/').pop()}" frameborder="0" allowfullscreen></iframe>
+                                </div>
+                            ` : ''}
+
+                            <div class="glass rounded-[3rem] p-12 border-2 border-purple-500/30 mb-8">
+                                <div class="flex items-start justify-between mb-8">
+                                    <div class="flex-1">
+                                        <h1 class="text-5xl md:text-6xl font-black mb-4 leading-tight gradient-text">${selectedScript.title}</h1>
+                                        <div class="flex flex-wrap items-center gap-4">
+                                            <span class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 rounded-full font-bold text-sm shadow-lg shadow-purple-500/30">
+                                                ${selectedScript.category.toUpperCase()}
+                                            </span>
+                                            <span class="text-gray-400 flex items-center gap-2">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                                ${selectedScript.author || 'مجهول'}
+                                            </span>
+                                            <span class="text-gray-400 flex items-center gap-2">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                                ${new Date(selectedScript.date).toLocaleDateString('ar-SA')}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                                    <div class="bg-purple-900/20 border border-purple-500/30 rounded-2xl p-6 text-center">
+                                        <div class="text-3xl mb-2">👁️</div>
+                                        <div class="text-3xl font-black text-purple-400">${selectedScript.stats.views || 0}</div>
+                                        <div class="text-sm text-gray-400 mt-1">مشاهدة</div>
+                                    </div>
+                                    <div class="bg-pink-900/20 border border-pink-500/30 rounded-2xl p-6 text-center">
+                                        <div class="text-3xl mb-2">⬇️</div>
+                                        <div class="text-3xl font-black text-pink-400">${selectedScript.stats.downloads || 0}</div>
+                                        <div class="text-sm text-gray-400 mt-1">تحميل</div>
+                                    </div>
+                                    <div class="bg-blue-900/20 border border-blue-500/30 rounded-2xl p-6 text-center">
+                                        <div class="text-3xl mb-2">📦</div>
+                                        <div class="text-lg font-black text-blue-400">${selectedScript.fileName.split('.').pop().toUpperCase()}</div>
+                                        <div class="text-sm text-gray-400 mt-1">نوع الملف</div>
+                                    </div>
+                                    <div class="bg-green-900/20 border border-green-500/30 rounded-2xl p-6 text-center">
+                                        <div class="text-3xl mb-2">✓</div>
+                                        <div class="text-lg font-black text-green-400">آمن</div>
+                                        <div class="text-sm text-gray-400 mt-1">مفحوص</div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-slate-900/40 border border-purple-500/20 rounded-3xl p-8 mb-8">
+                                    <h3 class="text-2xl font-bold mb-4 flex items-center gap-3 text-purple-300">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        الوصف التفصيلي
+                                    </h3>
+                                    <p class="text-gray-300 text-lg leading-relaxed whitespace-pre-line">${selectedScript.description || "لا يوجد وصف متاح لهذا السكربت."}</p>
+                                </div>
+
+                                <div class="flex gap-4">
+                                    <button onclick="handleDownload('${selectedScript.id}');window.location.href='${selectedScript.fileData}'" download="${selectedScript.fileName}" class="flex-1 btn-primary py-6 rounded-2xl font-black text-xl flex items-center justify-center gap-3 shine">
+                                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                        تحميل السكربت الآن
+                                    </button>
+                                    ${currentUser?.email === ADMIN_EMAIL ? `
+                                        <button onclick="deleteScript('${selectedScript.id}')" class="bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white px-8 py-6 rounded-2xl font-bold transition-all border border-red-500/30">
+                                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
             app.innerHTML = `
-                <nav class="glass sticky top-0 z-50 px-6 py-4 border-b border-white/5">
+                <nav class="glass sticky top-0 z-50 px-6 py-4 border-b border-purple-500/30 shine">
                     <div class="container mx-auto flex justify-between items-center">
-                        <h1 class="text-2xl font-black bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent cursor-pointer" onclick="currentPage='home';render()">FIVEM HUB</h1>
+                        <h1 class="text-3xl font-black gradient-text cursor-pointer logo-glow" onclick="currentPage='home';renderPage()">
+                            ⚡ FIVEM HUB
+                        </h1>
                         <div class="flex items-center gap-4">
                             ${currentUser ? `
-                                <button onclick="currentPage='home';render()" class="text-sm ${currentPage==='home'?'text-white font-bold':'text-gray-400'}">الرئيسية</button>
-                                <button onclick="currentPage='settings';render()" class="text-sm ${currentPage==='settings'?'text-white font-bold':'text-gray-400'}">الاعدادات</button>
-                                ${currentUser.email === ADMIN_EMAIL ? `<button onclick="showUpload=true;render()" class="btn-primary px-5 py-2 rounded-xl text-xs font-bold shadow-lg shadow-purple-500/20">رفع +</button>` : ''}
-                                <img src="${currentUser.img}" class="w-10 h-10 rounded-full border border-purple-500/50 p-0.5">
-                            ` : `<button onclick="showAuth=true;render()" class="bg-white text-black px-6 py-2 rounded-xl font-bold hover:bg-indigo-50 transition-all shadow-lg shadow-white/10">دخول</button>`}
+                                <button onclick="currentPage='home';renderPage()" class="text-sm font-bold ${currentPage==='home'?'text-white bg-purple-600/30 px-5 py-2.5 rounded-xl border border-purple-500/50':'text-gray-400 hover:text-white'} transition-all">الرئيسية</button>
+                                <button onclick="currentPage='settings';renderPage()" class="text-sm font-bold ${currentPage==='settings'?'text-white bg-purple-600/30 px-5 py-2.5 rounded-xl border border-purple-500/50':'text-gray-400 hover:text-white'} transition-all">الاعدادات</button>
+                                ${currentUser.email === ADMIN_EMAIL ? `<button onclick="showUpload=true;renderPage()" class="btn-primary px-6 py-2.5 rounded-xl text-sm font-bold">رفع سكربت +</button>` : ''}
+                                <img src="${currentUser.img}" class="w-12 h-12 rounded-full border-2 border-purple-500 p-0.5 hover:scale-110 transition-transform cursor-pointer shadow-lg shadow-purple-500/30" onclick="currentPage='settings';renderPage()">
+                            ` : `<button onclick="showAuth=true;authMode='choose';renderPage()" class="btn-primary px-10 py-3 rounded-xl font-bold shine">تسجيل الدخول</button>`}
                         </div>
                     </div>
                 </nav>
@@ -189,113 +522,243 @@
                 <main class="container mx-auto px-6 py-12 min-h-[80vh]">
                     ${!currentUser ? `
                         <div class="text-center py-20 fade-in">
-                            <h2 class="text-5xl md:text-7xl font-black mb-6 leading-tight tracking-tighter">عالم السكربتات <br><span class="text-indigo-500">بين يديك</span></h2>
-                            <p class="text-gray-400 text-lg mb-10 max-w-xl mx-auto">أكبر منصة عربية لتحميل سكربتات FiveM الحصرية والآمنة 100%.</p>
-                            <button onclick="showAuth=true;render()" class="btn-primary px-12 py-4 rounded-2xl font-black text-xl shadow-xl shadow-purple-500/20">ابدأ الآن مجاناً</button>
+                            <div class="floating mb-10">
+                                <span class="text-9xl drop-shadow-2xl">🎮</span>
+                            </div>
+                            <h2 class="text-7xl md:text-9xl font-black mb-8 leading-tight tracking-tighter">
+                                عالم <span class="gradient-text">FiveM</span><br>
+                                <span class="text-6xl md:text-8xl text-purple-300">بين يديك</span>
+                            </h2>
+                            <p class="text-gray-300 text-2xl mb-14 max-w-3xl mx-auto leading-relaxed">
+                                أكبر منصة عربية لتحميل سكربتات FiveM الحصرية والآمنة 100%. انضم لآلاف المطورين الآن!
+                            </p>
+                            <button onclick="showAuth=true;authMode='choose';renderPage()" class="btn-primary px-20 py-6 rounded-3xl font-black text-3xl inline-flex items-center gap-4 shine">
+                                ابدأ الآن مجاناً
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                                </svg>
+                            </button>
+                            <div class="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                                <div class="glass p-10 rounded-3xl text-center slide-up border-2 border-purple-500/20 hover:border-purple-500/50 transition-all" style="animation-delay: 0.1s">
+                                    <div class="text-6xl mb-5">🚀</div>
+                                    <h3 class="font-bold text-2xl mb-3 text-purple-300">سكربتات حصرية</h3>
+                                    <p class="text-gray-400">آلاف السكربتات المجانية والمتنوعة</p>
+                                </div>
+                                <div class="glass p-10 rounded-3xl text-center slide-up border-2 border-purple-500/20 hover:border-purple-500/50 transition-all" style="animation-delay: 0.2s">
+                                    <div class="text-6xl mb-5">🔒</div>
+                                    <h3 class="font-bold text-2xl mb-3 text-pink-300">آمن 100%</h3>
+                                    <p class="text-gray-400">جميع الملفات مفحوصة ومضمونة</p>
+                                </div>
+                                <div class="glass p-10 rounded-3xl text-center slide-up border-2 border-purple-500/20 hover:border-purple-500/50 transition-all" style="animation-delay: 0.3s">
+                                    <div class="text-6xl mb-5">⚡</div>
+                                    <h3 class="font-bold text-2xl mb-3 text-blue-300">تحديث مستمر</h3>
+                                    <p class="text-gray-400">محتوى جديد يضاف يومياً</p>
+                                </div>
+                            </div>
                         </div>
                     ` : (currentPage === 'settings' ? `
-                        <div class="max-w-md mx-auto fade-in">
-                            <h2 class="text-3xl font-black mb-8 text-center">إعدادات الحساب</h2>
-                            <div class="glass p-8 rounded-[2.5rem] text-center border border-white/10">
-                                <div class="relative w-28 h-28 mx-auto mb-6 group">
-                                    <img src="${currentUser.img}" class="w-full h-full rounded-3xl object-cover border-4 border-indigo-500">
-                                    <label class="absolute -bottom-2 -right-2 bg-indigo-600 p-2 rounded-full cursor-pointer shadow-lg hover:bg-indigo-500">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
+                        <div class="max-w-lg mx-auto fade-in">
+                            <h2 class="text-5xl font-black mb-12 text-center gradient-text">إعدادات الحساب</h2>
+                            <div class="glass p-12 rounded-[3rem] text-center border-2 border-purple-500/30">
+                                <div class="relative w-36 h-36 mx-auto mb-10 group">
+                                    <img src="${currentUser.img}" class="w-full h-full rounded-3xl object-cover border-4 border-purple-500 shadow-2xl shadow-purple-500/40">
+                                    <label class="absolute -bottom-4 -right-4 bg-gradient-to-r from-purple-600 to-pink-600 p-4 rounded-full cursor-pointer shadow-2xl hover:scale-110 transition-transform">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                         <input type="file" class="hidden" accept="image/*" onchange="handleFile(event, 'profile')">
                                     </label>
                                 </div>
-                                <div class="mb-6">
-                                    <input id="set-name" type="text" value="${currentUser.name}" ${currentUser.nameChanged ? 'disabled' : ''} class="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-center outline-none focus:border-indigo-500 ${currentUser.nameChanged?'opacity-50 cursor-not-allowed':''}">
-                                    <p class="text-[10px] text-gray-500 mt-2">${currentUser.nameChanged ? 'تم تغيير الاسم مسبقاً' : 'يمكنك تغيير اسمك لمرة واحدة فقط'}</p>
+                                <div class="mb-8">
+                                    <label class="block text-right text-sm text-gray-400 mb-3 font-bold">الاسم</label>
+                                    <input id="set-name" type="text" value="${currentUser.name}" ${currentUser.nameChanged ? 'disabled' : ''} class="w-full bg-slate-900/60 border-2 border-purple-500/30 rounded-2xl p-5 text-center outline-none focus:border-purple-500 transition-all text-lg font-bold ${currentUser.nameChanged?'opacity-50 cursor-not-allowed':''}">
+                                    <p class="text-xs text-gray-500 mt-3">${currentUser.nameChanged ? '✓ تم تغيير الاسم مسبقاً' : '⚠️ يمكنك تغيير اسمك لمرة واحدة فقط'}</p>
                                 </div>
-                                ${!currentUser.nameChanged ? `<button onclick="updateProfile(document.getElementById('set-name').value, null)" class="w-full btn-primary py-4 rounded-2xl font-bold mb-4">حفظ الاسم</button>` : ''}
-                                <button onclick="logout()" class="w-full bg-red-500/10 text-red-500 py-4 rounded-2xl font-bold hover:bg-red-500 hover:text-white transition-all">تسجيل الخروج</button>
+                                <div class="mb-8">
+                                    <label class="block text-right text-sm text-gray-400 mb-3 font-bold">البريد الإلكتروني</label>
+                                    <input type="text" value="${currentUser.email}" disabled class="w-full bg-slate-900/60 border-2 border-purple-500/30 rounded-2xl p-5 text-center outline-none opacity-50 cursor-not-allowed text-lg">
+                                </div>
+                                ${!currentUser.nameChanged ? `<button onclick="updateProfile(document.getElementById('set-name').value, null)" class="w-full btn-primary py-5 rounded-2xl font-bold mb-5 text-lg">حفظ التغييرات</button>` : ''}
+                                <button onclick="logout()" class="w-full bg-red-500/20 text-red-400 py-5 rounded-2xl font-bold hover:bg-red-500 hover:text-white transition-all border-2 border-red-500/30 text-lg">تسجيل الخروج</button>
                             </div>
                         </div>
                     ` : `
-                        <div class="flex gap-3 overflow-x-auto pb-8 no-scrollbar">
-                            ${['all', 'scripts', 'jobs', 'cars', 'maps'].map(c => `<button onclick="activeCategory='${c}';render()" class="px-6 py-2 rounded-full border text-sm whitespace-nowrap ${activeCategory===c?'bg-indigo-600 border-indigo-400':'glass border-white/10 text-gray-400'} transition-all">${c.toUpperCase()}</button>`).join('')}
+                        <div class="mb-10">
+                            <h2 class="text-5xl font-black mb-8 gradient-text">استكشف السكربتات</h2>
+                            <div class="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+                                ${['all', 'scripts', 'jobs', 'cars', 'maps'].map(c => `
+                                    <button onclick="activeCategory='${c}';renderPage()" class="px-10 py-4 rounded-2xl border-2 text-sm font-bold whitespace-nowrap ${activeCategory===c?'bg-gradient-to-r from-purple-600 to-pink-600 border-purple-400 shadow-xl shadow-purple-500/40 scale-110':'glass border-purple-500/20 text-gray-400 hover:border-purple-500/50 hover:scale-105'} transition-all">
+                                        ${c === 'all' ? '🌟 الكل' : c === 'scripts' ? '📜 Scripts' : c === 'jobs' ? '💼 Jobs' : c === 'cars' ? '🚗 Cars' : '🗺️ Maps'}
+                                    </button>
+                                `).join('')}
+                            </div>
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 fade-in">
-                            ${filtered.map(s => `
-                                <div class="glass rounded-[2rem] border border-white/5 overflow-hidden flex flex-col hover:border-indigo-500/50 hover:scale-[1.02] transition-all">
-                                    <div class="h-44 bg-slate-900/50 relative">
-                                        ${s.media?.type==='image'?`<img src="${s.media.data}" class="w-full h-full object-cover">`:
-                                          s.media?.type==='youtube'?`<div class="w-full h-full flex items-center justify-center text-red-500 text-3xl">▶️</div>`:
-                                          `<div class="w-full h-full flex items-center justify-center text-gray-700 font-bold">PREVIEW</div>`}
-                                    </div>
-                                    <div class="p-6">
-                                        <h3 class="font-bold mb-4 line-clamp-1">${s.title}</h3>
-                                        <div class="flex justify-between text-[11px] text-gray-500 mb-6">
-                                            <span>👁️ ${s.stats.views || 0}</span>
-                                            <span>⬇️ ${s.stats.downloads || 0}</span>
+                        ${filtered.length === 0 ? `
+                            <div class="text-center py-24 fade-in">
+                                <div class="text-9xl mb-8 floating">📦</div>
+                                <h3 class="text-4xl font-bold text-gray-400 mb-6">لا توجد سكربتات حالياً</h3>
+                                <p class="text-gray-500 text-xl">كن أول من يضيف سكربت في هذا القسم!</p>
+                            </div>
+                        ` : `
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 fade-in">
+                                ${filtered.map(s => `
+                                    <div class="glass rounded-3xl border-2 border-purple-500/20 overflow-hidden flex flex-col card-hover cursor-pointer" onclick="viewScript('${s.id}')">
+                                        <div class="h-56 bg-gradient-to-br from-slate-900 to-purple-900/30 relative overflow-hidden">
+                                            ${s.media?.type==='image'?`<img src="${s.media.data}" class="w-full h-full object-cover">`:
+                                              s.media?.type==='youtube'?`<div class="w-full h-full flex items-center justify-center text-red-500 text-6xl">▶️</div>`:
+                                              `<div class="w-full h-full flex items-center justify-center">
+                                                <svg class="w-24 h-24 text-purple-500/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                                                </svg>
+                                              </div>`}
+                                            <div class="absolute top-4 right-4 bg-black/70 backdrop-blur-sm px-4 py-2 rounded-full text-xs font-bold border border-purple-500/50 shadow-lg">
+                                                ${s.category.toUpperCase()}
+                                            </div>
                                         </div>
-                                        <button onclick="handleView('${s.id}')" class="w-full bg-white/5 hover:bg-white hover:text-black py-3 rounded-xl font-bold text-xs transition-all">عرض التفاصيل</button>
+                                        <div class="p-6 flex-1 flex flex-col">
+                                            <h3 class="font-bold text-xl mb-3 line-clamp-2 text-purple-100">${s.title}</h3>
+                                            <p class="text-gray-400 text-sm mb-5 line-clamp-2 flex-1">${s.description || 'لا يوجد وصف'}</p>
+                                            <div class="flex justify-between text-sm bg-slate-900/40 rounded-xl p-4 border border-purple-500/20">
+                                                <span class="flex items-center gap-2 text-purple-300">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                                    ${s.stats.views || 0}
+                                                </span>
+                                                <span class="flex items-center gap-2 text-pink-300">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                                    ${s.stats.downloads || 0}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            `).join('')}
-                        </div>
+                                `).join('')}
+                            </div>
+                        `}
                     `)}
                 </main>
 
+                <footer class="glass border-t-2 border-purple-500/30 py-8 mt-24">
+                    <div class="container mx-auto px-6 text-center text-gray-400">
+                        <p class="text-lg">© 2025 <span class="gradient-text font-bold">FiveM Hub</span> - جميع الحقوق محفوظة</p>
+                    </div>
+                </footer>
+
                 ${showAuth ? `
                     <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 fade-in">
-                        <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="showAuth=false;render()"></div>
-                        <div class="glass w-full max-w-sm rounded-[2.5rem] p-10 relative text-center border border-white/10 shadow-2xl">
-                            <h2 class="text-2xl font-black mb-8 italic tracking-tighter">مرحباً بك</h2>
-                            <button onclick="loginGoogle()" class="w-full bg-white text-black py-4 rounded-2xl font-bold mb-4 flex items-center justify-center gap-3 hover:scale-[1.03] transition-transform">
-                                <img src="https://www.google.com/favicon.ico" class="w-5"> دخول بجوجل
-                            </button>
-                            <button onclick="loginDiscord()" class="w-full bg-[#5865F2] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-3 hover:scale-[1.03] transition-transform shadow-lg shadow-[#5865F2]/20">
-                                <img src="https://assets-global.website-files.com/6257adef93867e3d8405e904/6257adef93867e83c605e965_discord-logo-white.svg" class="w-6"> دخول بديسكورد
-                            </button>
+                        <div class="absolute inset-0 bg-black/90 backdrop-blur-2xl" onclick="showAuth=false;renderPage()"></div>
+                        <div class="glass w-full max-w-md rounded-[3rem] p-12 relative text-center border-2 border-purple-500/30 shadow-2xl shadow-purple-500/30">
+                            ${authMode === 'choose' ? `
+                                <h2 class="text-4xl font-black mb-10 gradient-text">مرحباً بك 👋</h2>
+                                <div class="space-y-5">
+                                    <button onclick="loginGoogle()" class="w-full bg-white text-black py-5 rounded-2xl font-bold flex items-center justify-center gap-4 hover:scale-105 transition-transform shadow-2xl text-lg">
+                                        <img src="https://www.google.com/favicon.ico" class="w-7 h-7"> 
+                                        تسجيل الدخول بجوجل
+                                    </button>
+                                    <button onclick="loginDiscord()" class="w-full bg-[#5865F2] text-white py-5 rounded-2xl font-bold flex items-center justify-center gap-4 hover:scale-105 transition-transform shadow-2xl shadow-[#5865F2]/40 text-lg">
+                                        <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                                        </svg>
+                                        تسجيل الدخول بديسكورد
+                                    </button>
+                                    <button onclick="authMode='email';renderPage()" class="w-full bg-purple-600/20 text-purple-300 py-5 rounded-2xl font-bold flex items-center justify-center gap-4 hover:bg-purple-600/30 transition-all border-2 border-purple-500/30 text-lg">
+                                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                        تسجيل الدخول بالبريد الإلكتروني
+                                    </button>
+                                </div>
+                            ` : authMode === 'email' ? `
+                                <button onclick="authMode='choose';renderPage()" class="absolute top-8 right-8 text-gray-400 hover:text-white transition-all">
+                                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                </button>
+                                <h2 class="text-4xl font-black mb-10 gradient-text">تسجيل الدخول</h2>
+                                <div class="space-y-5 text-right">
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-3 font-bold">البريد الإلكتروني</label>
+                                        <input type="email" value="${emailForm.email}" oninput="emailForm.email=this.value" placeholder="example@email.com" class="w-full bg-slate-900/60 border-2 border-purple-500/30 rounded-2xl p-5 outline-none focus:border-purple-500 transition-all text-lg">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-3 font-bold">كلمة المرور</label>
+                                        <input type="password" value="${emailForm.password}" oninput="emailForm.password=this.value" placeholder="••••••••" class="w-full bg-slate-900/60 border-2 border-purple-500/30 rounded-2xl p-5 outline-none focus:border-purple-500 transition-all text-lg">
+                                    </div>
+                                    <button onclick="loginEmail()" class="w-full btn-primary py-5 rounded-2xl font-bold text-lg">تسجيل الدخول</button>
+                                    <button onclick="authMode='signup';renderPage()" class="w-full text-purple-400 text-base hover:text-purple-300 transition-all font-bold">ليس لديك حساب؟ إنشاء حساب جديد</button>
+                                </div>
+                            ` : `
+                                <button onclick="authMode='choose';renderPage()" class="absolute top-8 right-8 text-gray-400 hover:text-white transition-all">
+                                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                </button>
+                                <h2 class="text-4xl font-black mb-10 gradient-text">إنشاء حساب</h2>
+                                <div class="space-y-5 text-right">
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-3 font-bold">البريد الإلكتروني</label>
+                                        <input type="email" value="${emailForm.email}" oninput="emailForm.email=this.value" placeholder="example@email.com" class="w-full bg-slate-900/60 border-2 border-purple-500/30 rounded-2xl p-5 outline-none focus:border-purple-500 transition-all text-lg">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-3 font-bold">كلمة المرور (6 أحرف على الأقل)</label>
+                                        <input type="password" value="${emailForm.password}" oninput="emailForm.password=this.value" placeholder="••••••••" class="w-full bg-slate-900/60 border-2 border-purple-500/30 rounded-2xl p-5 outline-none focus:border-purple-500 transition-all text-lg">
+                                    </div>
+                                    <button onclick="signupEmail()" class="w-full btn-primary py-5 rounded-2xl font-bold text-lg">إنشاء الحساب</button>
+                                    <button onclick="authMode='email';renderPage()" class="w-full text-purple-400 text-base hover:text-purple-300 transition-all font-bold">لديك حساب؟ تسجيل الدخول</button>
+                                </div>
+                            `}
                         </div>
                     </div>
                 ` : ''}
 
                 ${showUpload ? `
                     <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 fade-in overflow-y-auto">
-                        <div class="absolute inset-0 bg-black/95 backdrop-blur-xl" onclick="showUpload=false;render()"></div>
-                        <div class="glass w-full max-w-lg rounded-[2rem] p-8 relative my-auto">
-                            <h2 class="text-xl font-bold mb-6">رفع سكربت جديد</h2>
-                            <div class="space-y-4">
-                                <input type="text" placeholder="عنوان السكربت" oninput="uploadForm.title=this.value" class="w-full bg-white/5 border border-white/10 rounded-xl p-4 outline-none text-sm">
-                                <textarea placeholder="الوصف" oninput="uploadForm.description=this.value" class="w-full bg-white/5 border border-white/10 rounded-xl p-4 h-24 text-sm outline-none"></textarea>
-                                <div class="grid grid-cols-2 gap-4 text-xs">
-                                    <select onchange="uploadForm.category=this.value" class="bg-slate-800 border border-white/10 rounded-xl p-3 outline-none">
-                                        <option value="scripts">Scripts</option><option value="jobs">Jobs</option><option value="cars">Cars</option><option value="maps">Maps</option>
-                                    </select>
-                                    <input type="file" onchange="uploadForm.file=this.files[0]" class="py-2 text-[10px]">
+                        <div class="absolute inset-0 bg-black/95 backdrop-blur-2xl" onclick="showUpload=false;renderPage()"></div>
+                        <div class="glass w-full max-w-2xl rounded-[3rem] p-12 relative my-auto border-2 border-purple-500/30 shadow-2xl">
+                            <h2 class="text-4xl font-black mb-10 gradient-text">رفع سكربت جديد</h2>
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-3 text-right font-bold">عنوان السكربت</label>
+                                    <input type="text" value="${uploadForm.title}" placeholder="مثال: نظام الوظائف المتطور" oninput="uploadForm.title=this.value" class="w-full bg-slate-900/60 border-2 border-purple-500/30 rounded-2xl p-5 outline-none focus:border-purple-500 transition-all text-lg">
                                 </div>
-                                <div class="p-4 bg-white/5 rounded-2xl border border-white/5">
-                                    <div class="flex gap-2 mb-4">
-                                        ${['none', 'image', 'youtube'].map(t => `<button onclick="uploadForm.mediaType='${t}';render()" class="flex-1 py-2 rounded-xl text-[10px] font-bold ${uploadForm.mediaType===t?'bg-indigo-600':'bg-white/5'} transition-all">${t.toUpperCase()}</button>`).join('')}
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-3 text-right font-bold">الوصف</label>
+                                    <textarea value="${uploadForm.description}" placeholder="وصف تفصيلي للسكربت..." oninput="uploadForm.description=this.value" class="w-full bg-slate-900/60 border-2 border-purple-500/30 rounded-2xl p-5 h-36 outline-none focus:border-purple-500 transition-all resize-none text-lg"></textarea>
+                                </div>
+                                <div class="grid grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-3 text-right font-bold">التصنيف</label>
+                                        <select onchange="uploadForm.category=this.value" class="w-full bg-slate-900/60 border-2 border-purple-500/30 rounded-2xl p-5 outline-none focus:border-purple-500 transition-all text-lg">
+                                            <option value="scripts">Scripts</option>
+                                            <option value="jobs">Jobs</option>
+                                            <option value="cars">Cars</option>
+                                            <option value="maps">Maps</option>
+                                        </select>
                                     </div>
-                                    ${uploadForm.mediaType==='image'?`<input type="file" accept="image/*" onchange="handleFile(event, 'upload_img')" class="text-xs text-gray-500">`:''}
-                                    ${uploadForm.mediaType==='youtube'?`<input type="text" placeholder="رابط يوتيوب" oninput="uploadForm.youtubeUrl=this.value" class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-xs outline-none focus:border-indigo-500">`:''}
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-3 text-right font-bold">الملف</label>
+                                        <input type="file" onchange="uploadForm.file=this.files[0];renderPage()" class="w-full bg-slate-900/60 border-2 border-purple-500/30 rounded-2xl p-4 text-sm file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:bg-purple-600 file:text-white file:cursor-pointer hover:file:bg-purple-500 file:font-bold">
+                                    </div>
                                 </div>
-                                <button onclick="submitScript()" class="w-full btn-primary py-4 rounded-xl font-black shadow-lg shadow-purple-500/20">نشر السكربت</button>
+                                <div class="p-8 bg-slate-900/40 rounded-3xl border-2 border-purple-500/20">
+                                    <label class="block text-sm text-gray-400 mb-5 text-right font-bold">المعاينة (اختياري)</label>
+                                    <div class="flex gap-4 mb-6">
+                                        ${['none', 'image', 'youtube'].map(t => `
+                                            <button onclick="uploadForm.mediaType='${t}';renderPage()" class="flex-1 py-4 rounded-xl text-base font-bold ${uploadForm.mediaType===t?'bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg':'bg-slate-800/50 text-gray-400'} transition-all hover:scale-105">
+                                                ${t === 'none' ? '❌ بدون' : t === 'image' ? '🖼️ صورة' : '📺 يوتيوب'}
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                    ${uploadForm.mediaType==='image'?`
+                                        <input type="file" accept="image/*" onchange="handleFile(event, 'upload_img')" class="w-full bg-slate-900/60 border-2 border-purple-500/30 rounded-2xl p-4 text-sm file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:bg-purple-600 file:text-white file:cursor-pointer file:font-bold">
+                                        ${uploadForm.image ? `<img src="${uploadForm.image}" class="mt-5 w-full h-48 object-cover rounded-2xl shadow-lg">` : ''}
+                                    `:''}
+                                    ${uploadForm.mediaType==='youtube'?`
+                                        <input type="text" value="${uploadForm.youtubeUrl}" placeholder="https://www.youtube.com/watch?v=..." oninput="uploadForm.youtubeUrl=this.value" class="w-full bg-slate-900/60 border-2 border-purple-500/30 rounded-2xl p-5 text-base outline-none focus:border-purple-500 transition-all">
+                                    `:''}
+                                </div>
+                                <button onclick="submitScript()" class="w-full btn-primary py-6 rounded-2xl font-black text-xl flex items-center justify-center gap-4 shine">
+                                    نشر السكربت الآن
+                                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                                </button>
                             </div>
-                        </div>
-                    </div>
-                ` : ''}
-
-                ${showDetails ? `
-                    <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 fade-in overflow-y-auto">
-                        <div class="absolute inset-0 bg-black/95 backdrop-blur-lg" onclick="showDetails=null;render()"></div>
-                        <div class="glass w-full max-w-2xl rounded-[2.5rem] p-8 relative my-auto max-h-[90vh]">
-                            ${showDetails.media?.type === 'image' ? `<img src="${showDetails.media.data}" class="w-full h-64 object-cover rounded-3xl mb-6 shadow-2xl">` : ''}
-                            ${showDetails.media?.type === 'youtube' ? `<div class="aspect-video w-full mb-6 bg-black rounded-3xl overflow-hidden shadow-2xl"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/${showDetails.media.url.split('v=')[1] || showDetails.media.url.split('/').pop()}" frameborder="0" allowfullscreen></iframe></div>` : ''}
-                            <h2 class="text-3xl font-black mb-4 tracking-tighter">${showDetails.title}</h2>
-                            <p class="text-gray-400 mb-8 leading-relaxed text-sm">${showDetails.description || "لا يوجد وصف."}</p>
-                            <button onclick="window.location.href='${showDetails.fileData}'" download="${showDetails.fileName}" class="w-full btn-primary py-5 rounded-2xl font-black text-xl flex items-center justify-center gap-3">تحميل السكربت الآن ⬇️</button>
                         </div>
                     </div>
                 ` : ''}
             `;
         }
 
-        render();
+        renderPage();
     </script>
 </body>
 </html>
