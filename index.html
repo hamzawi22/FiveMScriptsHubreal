@@ -3,39 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FiveM Scripts Hub</title>
+    <title>FiveM Scripts Hub - المنصة المتكاملة</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap');
-        * { font-family: 'Cairo', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            background: linear-gradient(135deg, #0a0118 0%, #1a0b2e 50%, #2d1b4e 100%);
-            color: #f8fafc; 
+        
+        :root {
+            --primary: #9333ea;
+            --secondary: #db2777;
+            --dark-bg: #0f172a;
+        }
+
+        * {
+            font-family: 'Cairo', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: radial-gradient(circle at top right, #1e1b4b, #0f172a, #020617);
+            color: #f8fafc;
             min-height: 100vh;
+            overflow-x: hidden;
         }
-        .glass { 
-            background: rgba(10, 1, 24, 0.6); 
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(147, 51, 234, 0.2);
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
-        .btn-primary { 
-            background: linear-gradient(135deg, #9333ea 0%, #c026d3 100%);
-            transition: all 0.3s;
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(147, 51, 234, 0.4);
-        }
+
         .gradient-text {
-            background: linear-gradient(135deg, #9333ea, #c026d3);
+            background: linear-gradient(to right, #a855f7, #ec4899);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .card-hover {
-            transition: all 0.3s;
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 10px; }
+        
+        .btn-discord {
+            background-color: #5865F2;
+            transition: all 0.3s ease;
         }
-        .card-hover:hover {
-            transform: translateY(-8px);
+        .btn-discord:hover {
+            background-color: #4752C4;
+            transform: translateY(-2px);
         }
     </style>
 </head>
@@ -43,418 +61,780 @@
     <div id="app"></div>
 
     <script>
+        // ==========================================
+        // 1. الإعدادات والتهيئـة
+        // ==========================================
         const ADMIN_EMAIL = 'obywawi@gmail.com';
-        
-        let state = {
-            currentUser: null,
-            showAuth: false,
-            authMode: 'login',
-            currentPage: 'home',
-            activeCategory: 'all',
-            selectedScript: null,
-            showUpload: false,
-            scripts: [],
-            emailForm: { email: '', password: '' },
-            uploadForm: { title: '', description: '', category: 'scripts', file: null, image: null }
+        const DISCORD_CLIENT_ID = '1454211006866657384';
+        const REDIRECT_URI = window.location.origin + window.location.pathname;
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDbW67rYjVnUdzoF9FvfLJypGi_MF9nQjg",
+            authDomain: "login-system-124a6.firebaseapp.com",
+            projectId: "login-system-124a6",
+            storageBucket: "login-system-124a6.firebasestorage.app",
+            messagingSenderId: "667998653226",
+            appId: "1:667998653226:web:bc4a96a2dbbd22cf386c53",
+            measurementId: "G-42NY348NXE"
         };
 
-        // تحميل السكربتات من Storage
-        async function loadScripts() {
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // ==========================================
+        // 2. حالة التطبيق
+        // ==========================================
+        let currentUser = null;
+        let scripts = [];
+        let showAuth = false;
+        let showUpload = false;
+        let currentPage = 'home'; // home, settings, scriptDetails
+        let currentScriptId = null;
+        let activeCategory = 'all';
+        let uploadForm = { title: '', description: '', category: 'jobs', mediaType: 'none', youtubeUrl: '' };
+        let selectedFile = null;
+        let selectedMedia = null;
+        let downloadTimer = null;
+        let downloadTimeLeft = 60;
+
+        // ==========================================
+        // 3. أدوات التخزين
+        // ==========================================
+        const storage = {
+            saveScripts: () => localStorage.setItem('hub_scripts', JSON.stringify(scripts)),
+            loadScripts: () => {
+                const data = localStorage.getItem('hub_scripts');
+                if (data) {
+                    scripts = JSON.parse(data);
+                } else {
+                    // إنشاء بيانات تجريبية
+                    scripts = getDemoScripts();
+                    storage.saveScripts();
+                }
+            },
+            saveUser: (user) => localStorage.setItem('hub_user', JSON.stringify(user)),
+            getUser: () => JSON.parse(localStorage.getItem('hub_user')),
+            clearUser: () => localStorage.removeItem('hub_user'),
+            getUserData: (uid) => {
+                const data = localStorage.getItem('hub_userdata_' + uid);
+                return data ? JSON.parse(data) : null;
+            },
+            saveUserData: (uid, data) => localStorage.setItem('hub_userdata_' + uid, JSON.stringify(data))
+        };
+
+        // ==========================================
+        // 4. بيانات تجريبية
+        // ==========================================
+        function getDemoScripts() {
+            return [
+                {
+                    id: 'demo_1',
+                    title: 'Police Job Script',
+                    description: 'سكربت وظيفة الشرطة الكامل مع نظام الرتب والمهام والباترول. يحتوي على واجهة مستخدم حديثة وسهلة الاستخدام.',
+                    category: 'jobs',
+                    fileName: 'police_job.zip',
+                    fileData: 'data:text/plain;base64,VGhpcyBpcyBhIGRlbW8gZmlsZQ==',
+                    media: {
+                        type: 'youtube',
+                        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+                    },
+                    uploader: 'demo@fivem.com',
+                    uploaderUid: 'demo_user_1',
+                    uploaderName: 'FiveM Scripts',
+                    date: new Date(Date.now() - 86400000 * 2).toISOString(),
+                    stats: { views: 245, downloads: 89, uniqueDownloads: [] }
+                },
+                {
+                    id: 'demo_2',
+                    title: 'Luxury Car Pack',
+                    description: 'مجموعة سيارات فخمة تحتوي على 15 سيارة بجودة عالية مع صوت حقيقي وتفاصيل دقيقة.',
+                    category: 'cars',
+                    fileName: 'luxury_cars.zip',
+                    fileData: 'data:text/plain;base64,VGhpcyBpcyBhIGRlbW8gZmlsZQ==',
+                    media: {
+                        type: 'image',
+                        data: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800'
+                    },
+                    uploader: 'demo@fivem.com',
+                    uploaderUid: 'demo_user_1',
+                    uploaderName: 'FiveM Scripts',
+                    date: new Date(Date.now() - 86400000 * 5).toISOString(),
+                    stats: { views: 567, downloads: 234, uniqueDownloads: [] }
+                },
+                {
+                    id: 'demo_3',
+                    title: 'Downtown Map MLO',
+                    description: 'خريطة وسط المدينة الحصرية مع محلات تجارية ومطاعم ومقاهي قابلة للدخول بتفاصيل واقعية.',
+                    category: 'maps',
+                    fileName: 'downtown_mlo.zip',
+                    fileData: 'data:text/plain;base64,VGhpcyBpcyBhIGRlbW8gZmlsZQ==',
+                    media: {
+                        type: 'image',
+                        data: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800'
+                    },
+                    uploader: 'demo@fivem.com',
+                    uploaderUid: 'demo_user_1',
+                    uploaderName: 'FiveM Scripts',
+                    date: new Date(Date.now() - 86400000 * 7).toISOString(),
+                    stats: { views: 432, downloads: 156, uniqueDownloads: [] }
+                },
+                {
+                    id: 'demo_4',
+                    title: 'Advanced Banking System',
+                    description: 'نظام بنكي متقدم يشمل الحسابات، القروض، التحويلات، وبطاقات الائتمان مع واجهة احترافية.',
+                    category: 'scripts',
+                    fileName: 'banking_system.zip',
+                    fileData: 'data:text/plain;base64,VGhpcyBpcyBhIGRlbW8gZmlsZQ==',
+                    media: null,
+                    uploader: 'demo@fivem.com',
+                    uploaderUid: 'demo_user_1',
+                    uploaderName: 'FiveM Scripts',
+                    date: new Date(Date.now() - 86400000 * 10).toISOString(),
+                    stats: { views: 678, downloads: 298, uniqueDownloads: [] }
+                },
+                {
+                    id: 'demo_5',
+                    title: 'Medic Job Complete',
+                    description: 'سكربت وظيفة الإسعاف الكامل مع نظام العلاج والإنقاذ والمستشفى. يتضمن سيارات إسعاف وملابس خاصة.',
+                    category: 'jobs',
+                    fileName: 'medic_job.zip',
+                    fileData: 'data:text/plain;base64,VGhpcyBpcyBhIGRlbW8gZmlsZQ==',
+                    media: {
+                        type: 'youtube',
+                        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+                    },
+                    uploader: 'demo@fivem.com',
+                    uploaderUid: 'demo_user_1',
+                    uploaderName: 'FiveM Scripts',
+                    date: new Date(Date.now() - 86400000 * 1).toISOString(),
+                    stats: { views: 123, downloads: 45, uniqueDownloads: [] }
+                }
+            ];
+        }
+
+        // ==========================================
+        // 5. نظام الهوية
+        // ==========================================
+        
+        async function signInWithGoogle() {
             try {
-                const result = await window.storage.list('script:', true);
-                if (!result?.keys) return [];
-                
-                const scripts = [];
-                for (const key of result.keys) {
-                    try {
-                        const data = await window.storage.get(key, true);
-                        if (data?.value) {
-                            scripts.push(JSON.parse(data.value));
-                        }
-                    } catch (e) {
-                        console.log('خطأ في تحميل:', key);
+                const provider = new firebase.auth.GoogleAuthProvider();
+                await auth.signInWithPopup(provider);
+                showAuth = false;
+            } catch (error) {
+                alert("خطأ جوجل: " + error.message);
+            }
+        }
+
+        function signInWithDiscord() {
+            const url = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify%20email`;
+            window.location.href = url;
+        }
+
+        async function handleDiscordCallback() {
+            const fragment = new URLSearchParams(window.location.hash.slice(1));
+            const token = fragment.get('access_token');
+            if (token) {
+                try {
+                    const res = await fetch('https://discord.com/api/users/@me', {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    const data = await res.json();
+                    currentUser = {
+                        uid: 'ds_' + data.id,
+                        username: data.global_name || data.username,
+                        email: data.email || `${data.username}@discord.link`,
+                        picture: data.avatar ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png` : 'https://cdn.discordapp.com/embed/avatars/0.png',
+                        provider: 'discord'
+                    };
+                    let userData = storage.getUserData(currentUser.uid);
+                    if (!userData) {
+                        userData = { nameChanged: false, customName: null };
+                        storage.saveUserData(currentUser.uid, userData);
                     }
-                }
-                return scripts.sort((a, b) => new Date(b.date) - new Date(a.date));
-            } catch (error) {
-                console.error('خطأ في تحميل السكربتات:', error);
-                return [];
+                    currentUser.userData = userData;
+                    storage.saveUser(currentUser);
+                    window.location.hash = '';
+                    render();
+                } catch (e) { console.error("Discord Error", e); }
             }
         }
 
-        // حفظ سكربت جديد
-        async function saveScript(script) {
-            try {
-                const key = `script:${script.id}`;
-                await window.storage.set(key, JSON.stringify(script), true);
-                return true;
-            } catch (error) {
-                console.error('خطأ في الحفظ:', error);
-                alert('فشل حفظ السكربت: ' + error.message);
-                return false;
-            }
-        }
-
-        // حذف سكربت
-        async function deleteScript(id) {
-            if (!confirm('هل تريد حذف هذا السكربت؟')) return;
-            try {
-                await window.storage.delete(`script:${id}`, true);
-                state.selectedScript = null;
-                state.currentPage = 'home';
-                await init();
-                alert('تم الحذف ✓');
-            } catch (error) {
-                alert('خطأ في الحذف');
-            }
-        }
-
-        // تسجيل دخول بسيط (بدون Firebase)
-        function loginUser() {
-            const { email, password } = state.emailForm;
-            if (!email || !password) {
-                alert('أدخل البريد وكلمة المرور');
-                return;
-            }
-            
-            // حفظ المستخدم محلياً
-            const user = {
-                uid: 'user_' + Date.now(),
-                email: email,
-                name: email.split('@')[0],
-                img: `https://ui-avatars.com/api/?name=${encodeURIComponent(email)}&background=9333ea&color=fff`
-            };
-            
-            localStorage.setItem('fivem_user', JSON.stringify(user));
-            state.currentUser = user;
-            state.showAuth = false;
-            state.emailForm = { email: '', password: '' };
-            render();
-        }
-
-        // تسجيل الخروج
-        function logout() {
-            localStorage.removeItem('fivem_user');
-            state.currentUser = null;
-            state.currentPage = 'home';
-            render();
-        }
-
-        // رفع ملف كصورة
-        function handleImageUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                state.uploadForm.image = ev.target.result;
-                render();
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // رفع ملف السكربت
-        function handleFileUpload(e) {
-            state.uploadForm.file = e.target.files[0];
-            render();
-        }
-
-        // نشر سكربت جديد
-        async function submitScript() {
-            const { title, description, category, file, image } = state.uploadForm;
-            
-            if (!title || !file) {
-                alert('أدخل العنوان واختر الملف');
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const script = {
-                    id: Date.now().toString(),
-                    title,
-                    description,
-                    category,
-                    fileData: e.target.result,
-                    fileName: file.name,
-                    image: image || null,
-                    stats: { views: 0, downloads: 0 },
-                    date: new Date().toISOString(),
-                    author: state.currentUser?.name || 'مجهول'
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = {
+                    uid: user.uid,
+                    username: user.displayName,
+                    email: user.email,
+                    picture: user.photoURL,
+                    provider: 'google'
                 };
-
-                const saved = await saveScript(script);
-                if (saved) {
-                    state.showUpload = false;
-                    state.uploadForm = { title: '', description: '', category: 'scripts', file: null, image: null };
-                    alert('تم النشر ✓');
-                    await init();
+                let userData = storage.getUserData(user.uid);
+                if (!userData) {
+                    userData = { nameChanged: false, customName: null };
+                    storage.saveUserData(user.uid, userData);
                 }
-            };
-            reader.readAsDataURL(file);
+                currentUser.userData = userData;
+                storage.saveUser(currentUser);
+            } else {
+                const localUser = storage.getUser();
+                if (localUser && localUser.provider === 'discord') {
+                    currentUser = localUser;
+                    let userData = storage.getUserData(localUser.uid);
+                    if (!userData) {
+                        userData = { nameChanged: false, customName: null };
+                        storage.saveUserData(localUser.uid, userData);
+                    }
+                    currentUser.userData = userData;
+                } else {
+                    currentUser = null;
+                }
+            }
+            render();
+        });
+
+        function logout() {
+            auth.signOut();
+            storage.clearUser();
+            currentUser = null;
+            location.reload();
         }
 
-        // عرض تفاصيل سكربت
-        async function viewScript(id) {
-            const script = state.scripts.find(s => s.id === id);
-            if (script) {
-                // زيادة المشاهدات
-                script.stats.views++;
-                await saveScript(script);
-                
-                state.selectedScript = script;
-                state.currentPage = 'details';
-                await init();
-            }
-        }
-
-        // تحميل سكربت
-        async function downloadScript(id) {
-            const script = state.scripts.find(s => s.id === id);
-            if (script) {
-                script.stats.downloads++;
-                await saveScript(script);
-                await init();
-            }
-        }
-
-        // تهيئة التطبيق
-        async function init() {
-            // تحميل المستخدم المحفوظ
-            const savedUser = localStorage.getItem('fivem_user');
-            if (savedUser) {
-                state.currentUser = JSON.parse(savedUser);
-            }
-
-            // تحميل السكربتات
-            state.scripts = await loadScripts();
+        // ==========================================
+        // 6. إدارة المحتوى
+        // ==========================================
+        
+        function handleFile(e) {
+            selectedFile = e.target.files[0];
             render();
         }
 
-        // عرض الصفحة
+        function handleMedia(e) {
+            selectedMedia = e.target.files[0];
+            render();
+        }
+
+        function submitScript() {
+            if (!selectedFile) return alert("يرجى اختيار ملف السكربت");
+            if (!uploadForm.title || !uploadForm.description) return alert("أكمل البيانات");
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                let mediaData = null;
+                if (uploadForm.mediaType === 'image' && selectedMedia) {
+                    const mediaReader = new FileReader();
+                    mediaReader.onload = (e) => {
+                        mediaData = {
+                            type: 'image',
+                            data: e.target.result
+                        };
+                        saveScriptData(event.target.result, mediaData);
+                    };
+                    mediaReader.readAsDataURL(selectedMedia);
+                } else if (uploadForm.mediaType === 'youtube' && uploadForm.youtubeUrl) {
+                    mediaData = {
+                        type: 'youtube',
+                        url: uploadForm.youtubeUrl
+                    };
+                    saveScriptData(event.target.result, mediaData);
+                } else {
+                    saveScriptData(event.target.result, null);
+                }
+            };
+            reader.readAsDataURL(selectedFile);
+        }
+
+        function saveScriptData(fileData, mediaData) {
+            const scriptData = {
+                id: 'sc_' + Date.now(),
+                title: uploadForm.title,
+                description: uploadForm.description,
+                category: uploadForm.category,
+                fileName: selectedFile.name,
+                fileData: fileData,
+                media: mediaData,
+                uploader: currentUser.email,
+                uploaderUid: currentUser.uid,
+                uploaderName: currentUser.userData?.customName || currentUser.username,
+                date: new Date().toISOString(),
+                stats: { views: 0, downloads: 0, uniqueDownloads: [] }
+            };
+
+            scripts.unshift(scriptData);
+            storage.saveScripts();
+            showUpload = false;
+            resetUpload();
+            render();
+        }
+
+        function viewDetails(scriptId) {
+            currentScriptId = scriptId;
+            const script = scripts.find(s => s.id === scriptId);
+            if (script) {
+                script.stats.views++;
+                storage.saveScripts();
+                currentPage = 'scriptDetails';
+                downloadTimer = null;
+                downloadTimeLeft = 60;
+                window.scrollTo(0, 0);
+                render();
+            }
+        }
+
+        function startDownloadTimer() {
+            downloadTimeLeft = 60;
+            downloadTimer = setInterval(() => {
+                downloadTimeLeft--;
+                if (downloadTimeLeft <= 0) {
+                    clearInterval(downloadTimer);
+                    downloadTimer = null;
+                }
+                render();
+            }, 1000);
+        }
+
+        function actionDownload(id) {
+            const s = scripts.find(x => x.id === id);
+            if (!s || !currentUser) return;
+
+            if (s.stats.uniqueDownloads.includes(currentUser.uid)) {
+                return alert("⚠️ لقد قمت بتحميل هذا السكربت مسبقاً");
+            }
+
+            s.stats.uniqueDownloads.push(currentUser.uid);
+            s.stats.downloads++;
+            storage.saveScripts();
+
+            const link = document.createElement('a');
+            link.href = s.fileData;
+            link.download = s.fileName;
+            link.click();
+
+            alert(`✅ تم تحميل: ${s.title}`);
+            render();
+        }
+
+        function updateUserName(newName) {
+            if (!currentUser || !newName) return;
+            
+            const userData = storage.getUserData(currentUser.uid);
+            if (userData.nameChanged) {
+                return alert("⚠️ لا يمكنك تغيير الاسم مرة أخرى");
+            }
+
+            userData.customName = newName;
+            userData.nameChanged = true;
+            storage.saveUserData(currentUser.uid, userData);
+            currentUser.userData = userData;
+            storage.saveUser(currentUser);
+            
+            alert("✅ تم تحديث الاسم بنجاح!");
+            render();
+        }
+
+        function resetUpload() {
+            uploadForm = { title: '', description: '', category: 'jobs', mediaType: 'none', youtubeUrl: '' };
+            selectedFile = null;
+            selectedMedia = null;
+        }
+
+        function goHome() {
+            currentPage = 'home';
+            currentScriptId = null;
+            if (downloadTimer) {
+                clearInterval(downloadTimer);
+                downloadTimer = null;
+            }
+            render();
+        }
+
+        // ==========================================
+        // 7. واجهة المستخدم
+        // ==========================================
+        
         function render() {
             const app = document.getElementById('app');
-            const filtered = state.activeCategory === 'all' 
-                ? state.scripts 
-                : state.scripts.filter(s => s.category === state.activeCategory);
+            const isAdmin = currentUser?.email === ADMIN_EMAIL;
+            const filtered = activeCategory === 'all' ? scripts : scripts.filter(s => s.category === activeCategory);
+            const displayName = currentUser?.userData?.customName || currentUser?.username;
+            const currentScript = currentScriptId ? scripts.find(s => s.id === currentScriptId) : null;
 
-            // صفحة التفاصيل
-            if (state.currentPage === 'details' && state.selectedScript) {
-                const s = state.selectedScript;
-                app.innerHTML = `
-                    <nav class="glass px-6 py-4 sticky top-0 z-50">
-                        <div class="max-w-7xl mx-auto flex justify-between items-center">
-                            <h1 class="text-2xl font-bold gradient-text cursor-pointer" onclick="state.currentPage='home';state.selectedScript=null;render()">
-                                ⚡ FIVEM HUB
-                            </h1>
-                            <button onclick="state.currentPage='home';state.selectedScript=null;render()" class="text-gray-400 hover:text-white">
-                                ← العودة
-                            </button>
-                        </div>
-                    </nav>
-
-                    <div class="max-w-6xl mx-auto px-6 py-12">
-                        ${s.image ? `
-                            <img src="${s.image}" class="w-full h-96 object-cover rounded-3xl mb-8 shadow-2xl">
-                        ` : ''}
-
-                        <div class="glass rounded-3xl p-10 mb-8">
-                            <h1 class="text-5xl font-black mb-6 gradient-text">${s.title}</h1>
-                            
-                            <div class="flex gap-4 mb-8">
-                                <span class="bg-purple-600 px-4 py-2 rounded-full text-sm font-bold">
-                                    ${s.category.toUpperCase()}
-                                </span>
-                                <span class="text-gray-400">👤 ${s.author}</span>
-                                <span class="text-gray-400">📅 ${new Date(s.date).toLocaleDateString('ar-SA')}</span>
-                            </div>
-
-                            <div class="grid grid-cols-3 gap-4 mb-8">
-                                <div class="bg-purple-900/30 rounded-2xl p-6 text-center">
-                                    <div class="text-3xl font-bold text-purple-400">${s.stats.views}</div>
-                                    <div class="text-sm text-gray-400">مشاهدة</div>
-                                </div>
-                                <div class="bg-pink-900/30 rounded-2xl p-6 text-center">
-                                    <div class="text-3xl font-bold text-pink-400">${s.stats.downloads}</div>
-                                    <div class="text-sm text-gray-400">تحميل</div>
-                                </div>
-                                <div class="bg-blue-900/30 rounded-2xl p-6 text-center">
-                                    <div class="text-lg font-bold text-blue-400">${s.fileName.split('.').pop().toUpperCase()}</div>
-                                    <div class="text-sm text-gray-400">نوع الملف</div>
-                                </div>
-                            </div>
-
-                            <div class="bg-slate-900/40 rounded-2xl p-6 mb-8">
-                                <h3 class="text-xl font-bold mb-4 text-purple-300">📝 الوصف</h3>
-                                <p class="text-gray-300 leading-relaxed">${s.description || 'لا يوجد وصف'}</p>
-                            </div>
-
-                            <div class="flex gap-4">
-                                <a href="${s.fileData}" download="${s.fileName}" onclick="downloadScript('${s.id}')" class="flex-1 btn-primary py-4 rounded-2xl font-bold text-center">
-                                    ⬇️ تحميل السكربت
-                                </a>
-                                ${state.currentUser?.email === ADMIN_EMAIL ? `
-                                    <button onclick="deleteScript('${s.id}')" class="bg-red-500/20 text-red-400 px-8 py-4 rounded-2xl font-bold hover:bg-red-500 hover:text-white">
-                                        🗑️ حذف
-                                    </button>
-                                ` : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
-                return;
-            }
-
-            // الصفحة الرئيسية
             app.innerHTML = `
-                <nav class="glass px-6 py-4 sticky top-0 z-50">
-                    <div class="max-w-7xl mx-auto flex justify-between items-center">
-                        <h1 class="text-2xl font-bold gradient-text cursor-pointer" onclick="state.currentPage='home';render()">
-                            ⚡ FIVEM HUB
-                        </h1>
-                        <div class="flex items-center gap-4">
-                            ${state.currentUser ? `
-                                <span class="text-sm text-gray-400">مرحباً، ${state.currentUser.name}</span>
-                                ${state.currentUser.email === ADMIN_EMAIL ? `
-                                    <button onclick="state.showUpload=true;render()" class="btn-primary px-6 py-2 rounded-xl text-sm font-bold">
-                                        + رفع سكربت
-                                    </button>
-                                ` : ''}
-                                <button onclick="logout()" class="text-sm text-red-400 hover:text-red-300">
-                                    تسجيل خروج
+                <nav class="glass-card sticky top-0 z-[100] px-6 py-4 border-b border-white/5">
+                    <div class="container mx-auto flex justify-between items-center">
+                        <div class="flex items-center gap-4 cursor-pointer" onclick="goHome()">
+                            <div class="bg-gradient-to-br from-purple-600 to-pink-600 p-2 rounded-xl shadow-lg">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                            </div>
+                            <span class="text-2xl font-black gradient-text tracking-tighter">FIVEM HUB</span>
+                        </div>
+
+                        <div class="flex items-center gap-6">
+                            ${currentUser ? `
+                                <button onclick="goHome()" class="hidden md:block px-4 py-2 rounded-xl ${currentPage === 'home' ? 'bg-purple-600 font-bold' : 'text-gray-400 hover:text-white'} transition-all">
+                                    الرئيسية
                                 </button>
+                                <button onclick="currentPage='settings';currentScriptId=null;render()" class="hidden md:block px-4 py-2 rounded-xl ${currentPage === 'settings' ? 'bg-purple-600 font-bold' : 'text-gray-400 hover:text-white'} transition-all">
+                                    الإعدادات
+                                </button>
+                                <div class="flex items-center gap-3">
+                                    <img src="${currentUser.picture}" class="w-10 h-10 rounded-full border-2 border-purple-500/50 p-0.5">
+                                    ${isAdmin ? `<button onclick="showUpload=true;render()" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-lg">➕ رفع</button>` : ''}
+                                </div>
                             ` : `
-                                <button onclick="state.showAuth=true;render()" class="btn-primary px-8 py-3 rounded-xl font-bold">
-                                    تسجيل الدخول
-                                </button>
+                                <button onclick="showAuth=true;render()" class="bg-white text-slate-900 px-6 py-2 rounded-xl font-black hover:bg-purple-50 transition-all">دخول</button>
                             `}
                         </div>
                     </div>
                 </nav>
 
-                <main class="max-w-7xl mx-auto px-6 py-12">
-                    ${!state.currentUser ? `
-                        <div class="text-center py-20">
-                            <div class="text-8xl mb-8">🎮</div>
-                            <h2 class="text-6xl font-black mb-6">
-                                مرحباً بك في <span class="gradient-text">FiveM Hub</span>
-                            </h2>
-                            <p class="text-gray-400 text-xl mb-10 max-w-2xl mx-auto">
-                                أفضل منصة لتحميل سكربتات FiveM مجاناً
-                            </p>
-                            <button onclick="state.showAuth=true;render()" class="btn-primary px-16 py-5 rounded-2xl font-bold text-2xl">
-                                ابدأ الآن →
-                            </button>
-                        </div>
-                    ` : `
-                        <div class="mb-10">
-                            <h2 class="text-4xl font-black mb-6 gradient-text">السكربتات المتاحة</h2>
-                            <div class="flex gap-3 mb-8">
-                                ${['all', 'scripts', 'jobs', 'cars', 'maps'].map(c => `
-                                    <button onclick="state.activeCategory='${c}';render()" class="px-6 py-3 rounded-xl font-bold ${state.activeCategory===c?'bg-purple-600':'glass'} hover:bg-purple-600 transition-all">
-                                        ${c === 'all' ? '🌟 الكل' : c === 'scripts' ? '📜 Scripts' : c === 'jobs' ? '💼 Jobs' : c === 'cars' ? '🚗 Cars' : '🗺️ Maps'}
-                                    </button>
-                                `).join('')}
+                ${!currentUser ? `
+                    <section class="container mx-auto px-6 py-24 text-center">
+                        <h1 class="text-5xl md:text-8xl font-black mb-8 leading-tight tracking-tight">سيرفرك يستحق <br><span class="gradient-text italic">الأفضل دائماً</span></h1>
+                        <p class="text-gray-400 text-xl max-w-2xl mx-auto mb-12">تحميل سكربتات FiveM الحصرية مجاناً. جميع الملفات يتم فحصها وتدقيقها لضمان أعلى مستويات الأمان.</p>
+                        <button onclick="showAuth=true;render()" class="bg-purple-600 px-12 py-5 rounded-2xl font-black text-2xl hover:scale-105 transition-all shadow-2xl shadow-purple-500/40">ابدأ الآن - مجاناً</button>
+                        
+                        <div class="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8 text-center max-w-4xl mx-auto">
+                            <div class="glass-card rounded-3xl p-8">
+                                <div class="text-5xl mb-4">🎮</div>
+                                <h3 class="text-xl font-bold mb-2">سكربتات حصرية</h3>
+                                <p class="text-gray-400 text-sm">مجموعة ضخمة من السكربتات عالية الجودة</p>
                             </div>
+                            <div class="glass-card rounded-3xl p-8">
+                                <div class="text-5xl mb-4">🛡️</div>
+                                <h3 class="text-xl font-bold mb-2">آمن 100%</h3>
+                                <p class="text-gray-400 text-sm">جميع الملفات مفحوصة ومدققة</p>
+                            </div>
+                            <div class="glass-card rounded-3xl p-8">
+                                <div class="text-5xl mb-4">⚡</div>
+                                <h3 class="text-xl font-bold mb-2">تحديثات دورية</h3>
+                                <p class="text-gray-400 text-sm">محتوى جديد يضاف باستمرار</p>
+                            </div>
+                        </div>
+                    </section>
+                ` : currentPage === 'home' ? `
+                    <div class="container mx-auto px-6 mt-10">
+                        <div class="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+                            ${['all', 'jobs', 'cars', 'maps', 'scripts', 'other'].map(cat => `
+                                <button onclick="activeCategory='${cat}';render()" class="px-8 py-3 rounded-2xl border transition-all ${activeCategory === cat ? 'bg-purple-600 border-purple-400 font-bold shadow-lg' : 'border-white/10 glass-card text-gray-400 hover:text-white hover:bg-white/5'}">
+                                    ${cat === 'all' ? 'الكل' : cat.charAt(0).toUpperCase() + cat.slice(1)}
+                                </button>
+                            `).join('')}
                         </div>
 
-                        ${filtered.length === 0 ? `
-                            <div class="text-center py-20">
-                                <div class="text-7xl mb-6">📦</div>
-                                <h3 class="text-3xl font-bold text-gray-400">لا توجد سكربتات</h3>
-                            </div>
-                        ` : `
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                ${filtered.map(s => `
-                                    <div class="glass rounded-2xl overflow-hidden card-hover cursor-pointer" onclick="viewScript('${s.id}')">
-                                        <div class="h-48 bg-gradient-to-br from-purple-900 to-slate-900 relative">
-                                            ${s.image ? `
-                                                <img src="${s.image}" class="w-full h-full object-cover">
-                                            ` : `
-                                                <div class="w-full h-full flex items-center justify-center text-6xl">📄</div>
-                                            `}
-                                            <div class="absolute top-3 right-3 bg-black/80 px-3 py-1 rounded-full text-xs font-bold">
-                                                ${s.category.toUpperCase()}
-                                            </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12 mb-20">
+                            ${filtered.map(s => {
+                                let mediaHtml = '';
+                                if (s.media) {
+                                    if (s.media.type === 'image') {
+                                        mediaHtml = `<img src="${s.media.data}" class="w-full h-48 object-cover rounded-t-[32px] mb-4">`;
+                                    } else if (s.media.type === 'youtube') {
+                                        const videoId = s.media.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/)?.[1];
+                                        if (videoId) {
+                                            mediaHtml = `<img src="https://img.youtube.com/vi/${videoId}/maxresdefault.jpg" class="w-full h-48 object-cover rounded-t-[32px] mb-4">`;
+                                        }
+                                    }
+                                }
+                                
+                                return `
+                                <div class="glass-card rounded-[32px] overflow-hidden border border-white/5 hover:border-purple-500/40 transition-all duration-500 relative group cursor-pointer" onclick="viewDetails('${s.id}')">
+                                    ${mediaHtml}
+                                    <div class="p-8">
+                                        <div class="flex justify-between items-center mb-6">
+                                            <span class="bg-purple-600/20 text-purple-400 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter border border-purple-500/20">${s.category}</span>
+                                            <span class="text-[10px] text-gray-500">${new Date(s.date).toLocaleDateString('ar-EG')}</span>
                                         </div>
-                                        <div class="p-5">
-                                            <h3 class="font-bold text-lg mb-2 line-clamp-1">${s.title}</h3>
-                                            <p class="text-gray-400 text-sm mb-4 line-clamp-2">${s.description || 'لا يوجد وصف'}</p>
-                                            <div class="flex justify-between text-sm text-gray-500">
-                                                <span>👁️ ${s.stats.views}</span>
-                                                <span>⬇️ ${s.stats.downloads}</span>
+                                        <h3 class="text-2xl font-bold mb-4">${s.title}</h3>
+                                        <p class="text-gray-400 text-sm mb-8 leading-relaxed h-12 overflow-hidden">${s.description}</p>
+                                        
+                                        <div class="flex items-center gap-6 mb-8 text-xs text-gray-500 border-y border-white/5 py-4">
+                                            <div class="flex items-center gap-2 italic">👁️ <span class="font-bold text-white">${s.stats.views}</span></div>
+                                            <div class="flex items-center gap-2 italic">⬇️ <span class="font-bold text-white">${s.stats.downloads}</span></div>
+                                            <div class="flex items-center gap-2 italic">🛡️ <span class="font-bold text-green-400">آمن</span></div>
+                                        </div>
+
+                                        <button class="w-full bg-white text-black py-4 rounded-2xl font-black hover:bg-purple-600 hover:text-white transition-all transform group-hover:scale-[1.02]">عرض التفاصيل</button>
+                                        
+                                        ${s.uploaderUid === currentUser?.uid ? `
+                                            <div class="mt-6 text-center">
+                                                <span class="text-[10px] text-gray-600 uppercase font-bold tracking-widest block mb-1">Estimated Earnings</span>
+                                                <span class="text-green-400 font-black text-xl">$${(s.stats.downloads * 0.05).toFixed(2)}</span>
                                             </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            `}).join('')}
+                        </div>
+                    </div>
+                ` : currentPage === 'scriptDetails' && currentScript ? `
+                    <div class="container mx-auto px-6 mt-10 mb-20">
+                        <button onclick="goHome()" class="mb-8 flex items-center gap-2 text-gray-400 hover:text-white transition-all">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                            العودة للرئيسية
+                        </button>
+
+                        <div class="max-w-5xl mx-auto">
+                            ${currentScript.media ? (() => {
+                                if (currentScript.media.type === 'image') {
+                                    return `<img src="${currentScript.media.data}" class="w-full h-[500px] object-cover rounded-[40px] mb-10 shadow-2xl">`;
+                                } else if (currentScript.media.type === 'youtube') {
+                                    const videoId = currentScript.media.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/)?.[1];
+                                    if (videoId) {
+                                        return `<iframe src="https://www.youtube.com/embed/${videoId}" class="w-full h-[500px] rounded-[40px] mb-10 shadow-2xl" frameborder="0" allowfullscreen></iframe>`;
+                                    }
+                                }
+                                return '';
+                            })() : ''}
+
+                            <div class="glass-card rounded-[40px] p-10 mb-8">
+                                <div class="flex justify-between items-start mb-8">
+                                    <div>
+                                        <span class="bg-purple-600/20 text-purple-400 text-xs font-black px-4 py-2 rounded-full uppercase tracking-tighter border border-purple-500/20">${currentScript.category}</span>
+                                    </div>
+                                    <span class="text-sm text-gray-500">${new Date(currentScript.date).toLocaleDateString('ar-EG')}</span>
+                                </div>
+
+                                <h1 class="text-5xl font-black mb-6">${currentScript.title}</h1>
+                                <p class="text-gray-300 text-xl mb-10 leading-relaxed">${currentScript.description}</p>
+
+                                <div class="grid grid-cols-3 gap-6 mb-10">
+                                    <div class="glass-card rounded-2xl p-6 text-center">
+                                        <div class="text-4xl mb-3">👁️</div>
+                                        <div class="text-3xl font-black text-white mb-2">${currentScript.stats.views}</div>
+                                        <div class="text-sm text-gray-500">مشاهدة</div>
+                                    </div>
+                                    <div class="glass-card rounded-2xl p-6 text-center">
+                                        <div class="text-4xl mb-3">⬇️</div>
+                                        <div class="text-3xl font-black text-white mb-2">${currentScript.stats.downloads}</div>
+                                        <div class="text-sm text-gray-500">تحميل</div>
+                                    </div>
+                                    <div class="glass-card rounded-2xl p-6 text-center">
+                                        <div class="text-4xl mb-3">🛡️</div>
+                                        <div class="text-3xl font-black text-green-400 mb-2">آمن</div>
+                                        <div class="text-sm text-gray-500">محمي</div>
+                                    </div>
+                                </div>
+
+                                <div class="glass-card rounded-3xl p-8 mb-8 border border-white/5">
+                                    <h3 class="text-xl font-bold mb-4">معلومات الناشر</h3>
+                                    <div class="flex items-center gap-4 mb-6">
+                                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-2xl font-black">
+                                            ${currentScript.uploaderName.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <div class="text-lg font-bold">${currentScript.uploaderName}</div>
+                                            <div class="text-sm text-gray-500">${currentScript.uploader}</div>
                                         </div>
                                     </div>
-                                `).join('')}
-                            </div>
-                        `}
-                    `}
-                </main>
+                                    <div class="text-sm text-gray-600 border-t border-white/5 pt-4">
+                                        <div class="flex justify-between mb-2">
+                                            <span>اسم الملف:</span>
+                                            <span class="text-white font-bold">${currentScript.fileName}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span>تاريخ النشر:</span>
+                                            <span class="text-white font-bold">${new Date(currentScript.date).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                                        </div>
+                                    </div>
+                                </div>
 
-                <!-- نافذة تسجيل الدخول -->
-                ${state.showAuth ? `
-                    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90">
-                        <div class="glass w-full max-w-md rounded-3xl p-10">
-                            <h2 class="text-3xl font-black mb-8 text-center gradient-text">تسجيل الدخول</h2>
+                                ${downloadTimer === null && !currentScript.stats.uniqueDownloads.includes(currentUser?.uid) ? `
+                                    <button onclick="startDownloadTimer()" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-8 rounded-3xl font-black text-2xl transition-all shadow-2xl shadow-purple-500/30">
+                                        🚀 بدء التحميل
+                                    </button>
+                                ` : currentScript.stats.uniqueDownloads.includes(currentUser?.uid) ? `
+                                    <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-3xl p-8 text-center">
+                                        <div class="text-5xl mb-4">⚠️</div>
+                                        <div class="text-yellow-400 font-bold text-2xl">لقد قمت بتحميل هذا السكربت من قبل</div>
+                                        <p class="text-gray-400 text-sm mt-3">كل مستخدم يمكنه تحميل السكربت مرة واحدة فقط</p>
+                                    </div>
+                                ` : downloadTimeLeft > 0 ? `
+                                    <div class="bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-3xl p-12 text-center border border-purple-500/30">
+                                        <div class="relative w-40 h-40 mx-auto mb-8">
+                                            <svg class="transform -rotate-90 w-40 h-40">
+                                                <circle cx="80" cy="80" r="70" stroke="rgba(255,255,255,0.1)" stroke-width="10" fill="none" />
+                                                <circle cx="80" cy="80" r="70" stroke="#a855f7" stroke-width="10" fill="none"
+                                                    stroke-dasharray="${2 * Math.PI * 70}"
+                                                    stroke-dashoffset="${2 * Math.PI * 70 * (downloadTimeLeft / 60)}"
+                                                    class="transition-all duration-1000" />
+                                            </svg>
+                                            <div class="absolute inset-0 flex items-center justify-center">
+                                                <span class="text-5xl font-black">${downloadTimeLeft}</span>
+                                            </div>
+                                        </div>
+                                        <div class="text-2xl font-bold text-gray-300 mb-3">جاري التحقق من الأمان...</div>
+                                        <div class="text-base text-gray-500">يرجى الانتظار حتى انتهاء الفحص الأمني للملف</div>
+                                    </div>
+                                ` : `
+                                    <button onclick="actionDownload('${currentScript.id}')" class="w-full bg-green-600 hover:bg-green-700 text-white py-8 rounded-3xl font-black text-2xl transition-all shadow-2xl shadow-green-500/30 animate-pulse">
+                                        ✅ تحميل الآن
+                                    </button>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                ` : `
+                    <div class="container mx-auto px-6 mt-10 mb-20">
+                        <div class="max-w-3xl mx-auto">
+                            <h2 class="text-4xl font-black mb-10 italic">الإعدادات ⚙️</h2>
+                            
+                            <div class="glass-card rounded-[40px] p-10 mb-8">
+                                <h3 class="text-2xl font-bold mb-6">معلومات الحساب</h3>
+                                <div class="flex items-center gap-6 mb-8">
+                                    <img src="${currentUser.picture}" class="w-24 h-24 rounded-3xl border-4 border-purple-500/50">
+                                    <div>
+                                        <h4 class="text-xl font-bold mb-2">${displayName}</h4>
+                                        <p class="text-gray-400 text-sm">${currentUser.email}</p>
+                                        <span class="text-xs text-purple-400 mt-2 block">مقدم من ${currentUser.provider === 'google' ? 'Google' : 'Discord'}</span>
+                                    </div>
+                                </div>
+
+                                <div class="border-t border-white/10 pt-8">
+                                    <h4 class="text-sm font-black text-gray-500 uppercase mb-4">تعديل الاسم</h4>
+                                    ${!currentUser.userData.nameChanged ? `
+                                        <div class="flex gap-4">
+                                            <input type="text" id="newName" placeholder="أدخل الاسم الجديد" class="flex-1 bg-white/5 border border-white/10 rounded-2xl px-6 py-3 outline-none focus:border-purple-500 transition-all">
+                                            <button onclick="updateUserName(document.getElementById('newName').value)" class="bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-2xl font-black transition-all">حفظ</button>
+                                        </div>
+                                        <p class="text-yellow-400 text-xs mt-3 font-bold">⚠️ يمكنك تغيير الاسم مرة واحدة فقط!</p>
+                                    ` : `
+                                        <p class="text-gray-400 text-sm">✅ لقد قمت بتغيير اسمك من قبل. لا يمكنك تعديله مرة أخرى.</p>
+                                    `}
+                                </div>
+                            </div>
+
+                            <div class="glass-card rounded-[40px] p-10 mb-8">
+                                <h3 class="text-2xl font-bold mb-6">إحصائيات المحتوى</h3>
+                                <div class="grid grid-cols-3 gap-6 text-center">
+                                    <div>
+                                        <div class="text-4xl font-black text-purple-400 mb-2">${scripts.filter(s => s.uploaderUid === currentUser.uid).length}</div>
+                                        <div class="text-xs text-gray-500">سكربتات منشورة</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-4xl font-black text-green-400 mb-2">${scripts.filter(s => s.uploaderUid === currentUser.uid).reduce((sum, s) => sum + s.stats.downloads, 0)}</div>
+                                        <div class="text-xs text-gray-500">تحميلات</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-4xl font-black text-yellow-400 mb-2">${scripts.filter(s => s.uploaderUid === currentUser.uid).reduce((sum, s) => sum + s.stats.views, 0)}</div>
+                                        <div class="text-xs text-gray-500">مشاهدات</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="glass-card rounded-[40px] p-10">
+                                <h3 class="text-2xl font-bold mb-6 text-red-400">منطقة الخطر</h3>
+                                <button onclick="if(confirm('هل أنت متأكد من تسجيل الخروج؟')) logout()" class="w-full bg-red-600/20 hover:bg-red-600/30 border border-red-500/50 text-red-400 py-4 rounded-2xl font-black transition-all">
+                                    تسجيل الخروج
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `}
+
+                ${showAuth ? `
+                    <div class="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                        <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md" onclick="showAuth=false;render()"></div>
+                        <div class="glass-card w-full max-w-md rounded-[45px] p-12 relative border border-white/10">
+                            <div class="text-center mb-10">
+                                <div class="w-20 h-20 bg-gradient-to-tr from-purple-600 to-pink-500 rounded-3xl mx-auto mb-6 flex items-center justify-center rotate-12 shadow-2xl">
+                                    <svg class="w-10 h-10 text-white -rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                                </div>
+                                <h2 class="text-3xl font-black mb-3 italic">أهلاً بك!</h2>
+                                <p class="text-gray-400 text-sm">سجل دخولك لتتمكن من تحميل ورفع السكربتات</p>
+                            </div>
+                            
                             <div class="space-y-4">
-                                <input type="email" value="${state.emailForm.email}" oninput="state.emailForm.email=this.value" placeholder="البريد الإلكتروني" class="w-full bg-slate-900 border border-purple-500/30 rounded-xl p-4 outline-none focus:border-purple-500">
-                                <input type="password" value="${state.emailForm.password}" oninput="state.emailForm.password=this.value" placeholder="كلمة المرور" class="w-full bg-slate-900 border border-purple-500/30 rounded-xl p-4 outline-none focus:border-purple-500">
-                                <button onclick="loginUser()" class="w-full btn-primary py-4 rounded-xl font-bold">
-                                    دخول
+                                <button onclick="signInWithGoogle()" class="w-full bg-white text-black py-4 rounded-2xl font-black flex items-center justify-center gap-3 hover:bg-gray-200 transition-all">
+                                    <img src="https://www.google.com/favicon.ico" class="w-5">
+                                    بواسطة جوجل
                                 </button>
-                                <button onclick="state.showAuth=false;render()" class="w-full text-gray-400 text-sm hover:text-white">
-                                    إلغاء
+
+                                <button onclick="signInWithDiscord()" class="btn-discord w-full text-white py-4 rounded-2xl font-black flex items-center justify-center gap-3 shadow-xl shadow-indigo-500/20">
+                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.06.06 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.158-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.966 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.158-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
+                                    </svg>
+                                    بواسطة ديسكورد
                                 </button>
+                            </div>
+                            <button onclick="showAuth=false;render()" class="mt-8 w-full text-gray-500 text-xs font-bold hover:text-white transition-colors tracking-widest uppercase">إغلاق</button>
+                        </div>
+                    </div>
+                ` : ''}
+
+                ${showUpload ? `
+                    <div class="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                        <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md" onclick="showUpload=false;resetUpload();render()"></div>
+                        <div class="glass-card w-full max-w-2xl rounded-[40px] p-10 relative max-h-[90vh] overflow-y-auto">
+                            <h2 class="text-3xl font-black mb-8 italic">نشر سكربت جديد 🚀</h2>
+                            <div class="space-y-6 text-right">
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-500 uppercase mb-2 mr-2">العنوان</label>
+                                    <input type="text" value="${uploadForm.title}" oninput="uploadForm.title=this.value" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:border-purple-500 outline-none transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-500 uppercase mb-2 mr-2">وصف السكربت</label>
+                                    <textarea oninput="uploadForm.description=this.value" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 h-32 focus:border-purple-500 outline-none transition-all">${uploadForm.description}</textarea>
+                                </div>
+
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-500 uppercase mb-2 mr-2">الصورة أو الفيديو</label>
+                                    <div class="space-y-4">
+                                        <div class="flex gap-4">
+                                            <button onclick="uploadForm.mediaType='none';render()" class="flex-1 py-3 rounded-xl border ${uploadForm.mediaType === 'none' ? 'bg-purple-600 border-purple-400' : 'border-white/10 text-gray-400'}">بدون</button>
+                                            <button onclick="uploadForm.mediaType='image';render()" class="flex-1 py-3 rounded-xl border ${uploadForm.mediaType === 'image' ? 'bg-purple-600 border-purple-400' : 'border-white/10 text-gray-400'}">صورة</button>
+                                            <button onclick="uploadForm.mediaType='youtube';render()" class="flex-1 py-3 rounded-xl border ${uploadForm.mediaType === 'youtube' ? 'bg-purple-600 border-purple-400' : 'border-white/10 text-gray-400'}">يوتيوب</button>
+                                        </div>
+
+                                        ${uploadForm.mediaType === 'image' ? `
+                                            <input type="file" accept="image/*" onchange="handleMedia(event)" class="w-full text-xs text-gray-400 py-3">
+                                            ${selectedMedia ? `<p class="text-green-400 text-sm">✅ تم اختيار: ${selectedMedia.name}</p>` : ''}
+                                        ` : uploadForm.mediaType === 'youtube' ? `
+                                            <input type="text" value="${uploadForm.youtubeUrl}" placeholder="https://www.youtube.com/watch?v=..." oninput="uploadForm.youtubeUrl=this.value" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:border-purple-500 outline-none transition-all text-sm">
+                                        ` : ''}
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-[10px] font-black text-gray-500 uppercase mb-2 mr-2">التصنيف</label>
+                                        <select onchange="uploadForm.category=this.value" class="w-full bg-slate-800 border border-white/10 rounded-2xl px-6 py-4 outline-none">
+                                            <option value="jobs" ${uploadForm.category === 'jobs' ? 'selected' : ''}>Jobs</option>
+                                            <option value="cars" ${uploadForm.category === 'cars' ? 'selected' : ''}>Cars</option>
+                                            <option value="maps" ${uploadForm.category === 'maps' ? 'selected' : ''}>Maps</option>
+                                            <option value="scripts" ${uploadForm.category === 'scripts' ? 'selected' : ''}>Scripts</option>
+                                            <option value="other" ${uploadForm.category === 'other' ? 'selected' : ''}>Other</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-black text-gray-500 uppercase mb-2 mr-2">ملف السكربت</label>
+                                        <input type="file" onchange="handleFile(event)" class="w-full text-xs text-gray-400 py-3">
+                                        ${selectedFile ? `<p class="text-green-400 text-xs mt-2">✅ ${selectedFile.name}</p>` : ''}
+                                    </div>
+                                </div>
+
+                                <div class="flex gap-4 pt-6">
+                                    <button onclick="submitScript()" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 py-4 rounded-2xl font-black shadow-xl hover:scale-[1.02] transition-transform">نشر المحتوى</button>
+                                    <button onclick="showUpload=false;resetUpload();render()" class="px-8 py-4 bg-white/5 rounded-2xl font-bold hover:bg-white/10 transition-all">إلغاء</button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 ` : ''}
 
-                <!-- نافذة رفع سكربت -->
-                ${state.showUpload ? `
-                    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 overflow-y-auto">
-                        <div class="glass w-full max-w-2xl rounded-3xl p-10 my-auto">
-                            <h2 class="text-3xl font-black mb-8 gradient-text">رفع سكربت جديد</h2>
-                            <div class="space-y-4">
-                                <input type="text" value="${state.uploadForm.title}" oninput="state.uploadForm.title=this.value" placeholder="عنوان السكربت" class="w-full bg-slate-900 border border-purple-500/30 rounded-xl p-4 outline-none focus:border-purple-500">
-                                
-                                <textarea value="${state.uploadForm.description}" oninput="state.uploadForm.description=this.value" placeholder="الوصف" class="w-full bg-slate-900 border border-purple-500/30 rounded-xl p-4 h-32 outline-none focus:border-purple-500 resize-none"></textarea>
-                                
-                                <select onchange="state.uploadForm.category=this.value" class="w-full bg-slate-900 border border-purple-500/30 rounded-xl p-4 outline-none">
-                                    <option value="scripts">Scripts</option>
-                                    <option value="jobs">Jobs</option>
-                                    <option value="cars">Cars</option>
-                                    <option value="maps">Maps</option>
-                                </select>
-                                
-                                <div>
-                                    <label class="block text-sm text-gray-400 mb-2">الملف</label>
-                                    <input type="file" onchange="handleFileUpload(event)" class="w-full bg-slate-900 border border-purple-500/30 rounded-xl p-3 text-sm">
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm text-gray-400 mb-2">صورة معاينة (اختياري)</label>
-                                    <input type="file" accept="image/*" onchange="handleImageUpload(event)" class="w-full bg-slate-900 border border-purple-500/30 rounded-xl p-3 text-sm">
-                                    ${state.uploadForm.image ? `<img src="${state.uploadForm.image}" class="mt-3 w-full h-48 object-cover rounded-xl">` : ''}
-                                </div>
-                                
-                                <div class="flex gap-3">
-                                    <button onclick="submitScript()" class="flex-1 btn-primary py-4 rounded-xl font-bold">
-                                        نشر السكربت
-                                    </button>
-                                    <button onclick="state.showUpload=false;state.uploadForm={title:'',description:'',category:'scripts',file:null,image:null};render()" class="px-8 py-4 bg-gray-700 rounded-xl font-bold hover:bg-gray-600">
-                                        إلغاء
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                ` : ''}
+                <footer class="py-12 text-center text-gray-600 border-t border-white/5 mt-auto">
+                    <p class="text-[10px] font-black uppercase tracking-[0.5em]">FiveM Hub Platform 2025</p>
+                </footer>
             `;
         }
 
-        // بدء التطبيق
-        init();
+        // ==========================================
+        // 8. التشغيل
+        // ==========================================
+        window.onload = () => {
+            handleDiscordCallback();
+            storage.loadScripts();
+            render();
+        };
     </script>
 </body>
 </html>
