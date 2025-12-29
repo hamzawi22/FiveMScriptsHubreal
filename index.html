@@ -122,6 +122,8 @@
         let downloadTimer = null;
         let downloadTimeLeft = 60;
         let isLoading = true;
+        let firebaseError = false;
+        let errorMessage = '';
 
         // ==========================================
         // 3. نظام Firestore
@@ -130,181 +132,63 @@
         async function loadScriptsFromFirestore() {
             try {
                 isLoading = true;
+                firebaseError = false;
                 render();
                 
-                // محاولة التحميل من Firestore مع timeout
-                const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Timeout')), 5000)
-                );
-                
-                const loadPromise = db.collection('scripts').orderBy('date', 'desc').get();
-                
-                const snapshot = await Promise.race([loadPromise, timeoutPromise]);
+                const snapshot = await db.collection('scripts').orderBy('date', 'desc').get();
                 scripts = [];
                 snapshot.forEach(doc => {
                     scripts.push({ id: doc.id, ...doc.data() });
                 });
                 
-                // حفظ نسخة احتياطية في localStorage
-                localStorage.setItem('hub_scripts_cache', JSON.stringify(scripts));
-                
+                console.log('✅ تم تحميل السكربتات من Firestore بنجاح:', scripts.length);
                 isLoading = false;
                 render();
             } catch (error) {
-                console.error('Error loading from Firestore, using localStorage:', error);
-                
-                // استخدام localStorage كبديل
-                const cached = localStorage.getItem('hub_scripts_cache');
-                if (cached) {
-                    scripts = JSON.parse(cached);
-                } else {
-                    // إنشاء بيانات تجريبية في localStorage
-                    scripts = getDemoScripts();
-                    localStorage.setItem('hub_scripts_cache', JSON.stringify(scripts));
-                }
-                
+                console.error('❌ خطأ في تحميل البيانات من Firestore:', error);
+                firebaseError = true;
+                errorMessage = 'فشل الاتصال بقاعدة البيانات. يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى.';
                 isLoading = false;
                 render();
-            }
-        }
-
-        function getDemoScripts() {
-            return [
-                {
-                    id: 'demo_1',
-                    title: 'Police Job Script',
-                    description: 'سكربت وظيفة الشرطة الكامل مع نظام الرتب والمهام والباترول. يحتوي على واجهة مستخدم حديثة وسهلة الاستخدام.',
-                    category: 'jobs',
-                    fileName: 'police_job.zip',
-                    fileData: 'data:text/plain;base64,VGhpcyBpcyBhIGRlbW8gZmlsZSBmb3IgUG9saWNlIEpvYiBTY3JpcHQ=',
-                    media: {
-                        type: 'youtube',
-                        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
-                    },
-                    uploader: 'demo@fivem.com',
-                    uploaderUid: 'demo_user',
-                    uploaderName: 'FiveM Scripts',
-                    date: new Date(Date.now() - 86400000 * 2).toISOString(),
-                    stats: { views: 245, downloads: 89, uniqueDownloads: [] }
-                },
-                {
-                    id: 'demo_2',
-                    title: 'Luxury Car Pack',
-                    description: 'مجموعة سيارات فخمة تحتوي على 15 سيارة بجودة عالية مع صوت حقيقي وتفاصيل دقيقة.',
-                    category: 'cars',
-                    fileName: 'luxury_cars.zip',
-                    fileData: 'data:text/plain;base64,VGhpcyBpcyBhIGRlbW8gZmlsZSBmb3IgTHV4dXJ5IENhciBQYWNr',
-                    media: {
-                        type: 'image',
-                        data: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800'
-                    },
-                    uploader: 'demo@fivem.com',
-                    uploaderUid: 'demo_user',
-                    uploaderName: 'FiveM Scripts',
-                    date: new Date(Date.now() - 86400000 * 5).toISOString(),
-                    stats: { views: 567, downloads: 234, uniqueDownloads: [] }
-                },
-                {
-                    id: 'demo_3',
-                    title: 'Downtown Map MLO',
-                    description: 'خريطة وسط المدينة الحصرية مع محلات تجارية ومطاعم ومقاهي قابلة للدخول بتفاصيل واقعية.',
-                    category: 'maps',
-                    fileName: 'downtown_mlo.zip',
-                    fileData: 'data:text/plain;base64,VGhpcyBpcyBhIGRlbW8gZmlsZSBmb3IgRG93bnRvd24gTWFw',
-                    media: {
-                        type: 'image',
-                        data: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800'
-                    },
-                    uploader: 'demo@fivem.com',
-                    uploaderUid: 'demo_user',
-                    uploaderName: 'FiveM Scripts',
-                    date: new Date(Date.now() - 86400000 * 7).toISOString(),
-                    stats: { views: 432, downloads: 156, uniqueDownloads: [] }
-                },
-                {
-                    id: 'demo_4',
-                    title: 'Advanced Banking System',
-                    description: 'نظام بنكي متقدم يشمل الحسابات، القروض، التحويلات، وبطاقات الائتمان مع واجهة احترافية.',
-                    category: 'scripts',
-                    fileName: 'banking_system.zip',
-                    fileData: 'data:text/plain;base64,VGhpcyBpcyBhIGRlbW8gZmlsZSBmb3IgQmFua2luZyBTeXN0ZW0=',
-                    media: null,
-                    uploader: 'demo@fivem.com',
-                    uploaderUid: 'demo_user',
-                    uploaderName: 'FiveM Scripts',
-                    date: new Date(Date.now() - 86400000 * 10).toISOString(),
-                    stats: { views: 678, downloads: 298, uniqueDownloads: [] }
-                },
-                {
-                    id: 'demo_5',
-                    title: 'Medic Job Complete',
-                    description: 'سكربت وظيفة الإسعاف الكامل مع نظام العلاج والإنقاذ والمستشفى. يتضمن سيارات إسعاف وملابس خاصة.',
-                    category: 'jobs',
-                    fileName: 'medic_job.zip',
-                    fileData: 'data:text/plain;base64,VGhpcyBpcyBhIGRlbW8gZmlsZSBmb3IgTWVkaWMgSm9i',
-                    media: {
-                        type: 'youtube',
-                        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
-                    },
-                    uploader: 'demo@fivem.com',
-                    uploaderUid: 'demo_user',
-                    uploaderName: 'FiveM Scripts',
-                    date: new Date(Date.now() - 86400000 * 1).toISOString(),
-                    stats: { views: 123, downloads: 45, uniqueDownloads: [] }
-                }
-            ];
-        }
-
-        async function createDemoScripts() {
-            const demoScripts = getDemoScripts();
-            try {
-                for (const script of demoScripts) {
-                    await db.collection('scripts').add(script);
-                }
-                await loadScriptsFromFirestore();
-            } catch (error) {
-                console.error('Error creating demo scripts:', error);
-                // استخدام localStorage إذا فشل Firestore
-                scripts = demoScripts.map((s, i) => ({...s, id: 'demo_' + (i + 1)}));
-                localStorage.setItem('hub_scripts_cache', JSON.stringify(scripts));
             }
         }
 
         async function saveScriptToFirestore(scriptData) {
             try {
-                await db.collection('scripts').add(scriptData);
+                console.log('📤 جاري الاتصال بـ Firestore...');
+                console.log('📊 حجم البيانات:', JSON.stringify(scriptData).length, 'characters');
+                
+                // إضافة timeout
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('انتهت مهلة الاتصال بقاعدة البيانات')), 30000);
+                });
+                
+                const savePromise = db.collection('scripts').add(scriptData);
+                
+                const docRef = await Promise.race([savePromise, timeoutPromise]);
+                
+                console.log('✅ تم الحفظ في Firestore - ID:', docRef.id);
+                console.log('🔄 جاري تحديث القائمة...');
+                
                 await loadScriptsFromFirestore();
+                
+                console.log('✅ تم تحديث القائمة بنجاح');
                 return true;
             } catch (error) {
-                console.error('Error saving to Firestore, using localStorage:', error);
-                // استخدام localStorage كبديل
-                scriptData.id = 'sc_' + Date.now();
-                scripts.unshift(scriptData);
-                localStorage.setItem('hub_scripts_cache', JSON.stringify(scripts));
-                render();
-                return true;
+                console.error('❌ خطأ في Firestore:', error);
+                console.error('❌ تفاصيل الخطأ:', error.code, error.message);
+                throw new Error('فشل الحفظ في قاعدة البيانات: ' + error.message);
             }
         }
 
         async function updateScriptStats(scriptId, updates) {
             try {
                 await db.collection('scripts').doc(scriptId).update(updates);
+                console.log('✅ تم تحديث إحصائيات السكربت');
                 await loadScriptsFromFirestore();
             } catch (error) {
-                console.error('Error updating Firestore, using localStorage:', error);
-                // تحديث localStorage
-                const script = scripts.find(s => s.id === scriptId);
-                if (script) {
-                    Object.keys(updates).forEach(key => {
-                        if (key.includes('.')) {
-                            const parts = key.split('.');
-                            if (parts[0] === 'stats') {
-                                script.stats[parts[1]] = updates[key];
-                            }
-                        }
-                    });
-                    localStorage.setItem('hub_scripts_cache', JSON.stringify(scripts));
-                }
+                console.error('❌ خطأ في تحديث الإحصائيات:', error);
+                throw error;
             }
         }
 
@@ -317,8 +201,10 @@
                 const provider = new firebase.auth.GoogleAuthProvider();
                 await auth.signInWithPopup(provider);
                 showAuth = false;
+                render();
             } catch (error) {
-                alert("خطأ جوجل: " + error.message);
+                console.error('خطأ في تسجيل الدخول بجوجل:', error);
+                alert("خطأ في تسجيل الدخول: " + error.message);
             }
         }
 
@@ -353,7 +239,10 @@
                     localStorage.setItem('hub_user', JSON.stringify(currentUser));
                     window.location.hash = '';
                     render();
-                } catch (e) { console.error("Discord Error", e); }
+                } catch (e) { 
+                    console.error("خطأ في Discord:", e);
+                    alert("خطأ في تسجيل الدخول بـ Discord");
+                }
             }
         }
 
@@ -362,20 +251,18 @@
                 const doc = await db.collection('users').doc(uid).get();
                 return doc.exists ? doc.data() : null;
             } catch (error) {
-                console.error('Error getting user data from Firestore, using localStorage:', error);
-                // استخدام localStorage كبديل
-                const data = localStorage.getItem('hub_userdata_' + uid);
-                return data ? JSON.parse(data) : null;
+                console.error('خطأ في جلب بيانات المستخدم:', error);
+                throw error;
             }
         }
 
         async function saveUserDataToFirestore(uid, data) {
             try {
                 await db.collection('users').doc(uid).set(data);
+                console.log('✅ تم حفظ بيانات المستخدم');
             } catch (error) {
-                console.error('Error saving user data to Firestore, using localStorage:', error);
-                // استخدام localStorage كبديل
-                localStorage.setItem('hub_userdata_' + uid, JSON.stringify(data));
+                console.error('خطأ في حفظ بيانات المستخدم:', error);
+                throw error;
             }
         }
 
@@ -388,23 +275,31 @@
                     picture: user.photoURL,
                     provider: 'google'
                 };
-                let userData = await getUserDataFromFirestore(user.uid);
-                if (!userData) {
-                    userData = { nameChanged: false, customName: null };
-                    await saveUserDataToFirestore(user.uid, userData);
+                try {
+                    let userData = await getUserDataFromFirestore(user.uid);
+                    if (!userData) {
+                        userData = { nameChanged: false, customName: null };
+                        await saveUserDataToFirestore(user.uid, userData);
+                    }
+                    currentUser.userData = userData;
+                    localStorage.setItem('hub_user', JSON.stringify(currentUser));
+                } catch (error) {
+                    console.error('خطأ في تحميل بيانات المستخدم:', error);
                 }
-                currentUser.userData = userData;
-                localStorage.setItem('hub_user', JSON.stringify(currentUser));
             } else {
                 const localUser = JSON.parse(localStorage.getItem('hub_user'));
                 if (localUser && localUser.provider === 'discord') {
                     currentUser = localUser;
-                    let userData = await getUserDataFromFirestore(localUser.uid);
-                    if (!userData) {
-                        userData = { nameChanged: false, customName: null };
-                        await saveUserDataToFirestore(localUser.uid, userData);
+                    try {
+                        let userData = await getUserDataFromFirestore(localUser.uid);
+                        if (!userData) {
+                            userData = { nameChanged: false, customName: null };
+                            await saveUserDataToFirestore(localUser.uid, userData);
+                        }
+                        currentUser.userData = userData;
+                    } catch (error) {
+                        console.error('خطأ في تحميل بيانات المستخدم:', error);
                     }
-                    currentUser.userData = userData;
                 } else {
                     currentUser = null;
                 }
@@ -425,78 +320,158 @@
         
         function handleFile(e) {
             selectedFile = e.target.files[0];
+            if (selectedFile) {
+                console.log('📄 تم اختيار ملف:', selectedFile.name, selectedFile.size, 'bytes');
+                if (selectedFile.size > 5 * 1024 * 1024) {
+                    alert('⚠️ تحذير: حجم الملف ' + (selectedFile.size / 1024 / 1024).toFixed(2) + ' MB\nالحد الأقصى هو 5MB. قد يفشل الرفع!');
+                }
+            }
             render();
         }
 
         function handleMedia(e) {
             selectedMedia = e.target.files[0];
+            if (selectedMedia) {
+                console.log('🖼️ تم اختيار صورة:', selectedMedia.name, selectedMedia.size, 'bytes');
+                if (selectedMedia.size > 2 * 1024 * 1024) {
+                    alert('⚠️ تحذير: حجم الصورة ' + (selectedMedia.size / 1024 / 1024).toFixed(2) + ' MB\nالحد الأقصى هو 2MB. قد يفشل الرفع!');
+                }
+            }
             render();
         }
 
         async function submitScript() {
-            if (!selectedFile) return alert("يرجى اختيار ملف السكربت");
-            if (!uploadForm.title || !uploadForm.description) return alert("أكمل البيانات");
+            console.log('🚀 بدء عملية النشر...');
+            
+            if (!selectedFile) {
+                alert("يرجى اختيار ملف السكربت");
+                return;
+            }
+            if (!uploadForm.title || !uploadForm.description) {
+                alert("أكمل البيانات");
+                return;
+            }
 
-            const reader = new FileReader();
-            reader.onload = async (event) => {
+            // التحقق من حجم الملف (أقل من 5MB)
+            if (selectedFile.size > 5 * 1024 * 1024) {
+                alert("❌ حجم الملف كبير جداً! الحد الأقصى 5MB");
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitScriptBtn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = '⏳ جاري النشر...';
+            }
+
+            try {
+                console.log('📄 قراءة ملف السكربت:', selectedFile.name, selectedFile.size, 'bytes');
+                const fileData = await readFileAsDataURL(selectedFile);
+                console.log('✅ تم قراءة ملف السكربت بنجاح');
+                
                 let mediaData = null;
+                
                 if (uploadForm.mediaType === 'image' && selectedMedia) {
-                    const mediaReader = new FileReader();
-                    mediaReader.onload = async (e) => {
-                        mediaData = {
-                            type: 'image',
-                            data: e.target.result
-                        };
-                        await saveScriptData(event.target.result, mediaData);
+                    console.log('🖼️ قراءة الصورة:', selectedMedia.name);
+                    if (selectedMedia.size > 2 * 1024 * 1024) {
+                        throw new Error('حجم الصورة كبير جداً! الحد الأقصى 2MB');
+                    }
+                    const imageData = await readFileAsDataURL(selectedMedia);
+                    mediaData = {
+                        type: 'image',
+                        data: imageData
                     };
-                    mediaReader.readAsDataURL(selectedMedia);
+                    console.log('✅ تم قراءة الصورة بنجاح');
                 } else if (uploadForm.mediaType === 'youtube' && uploadForm.youtubeUrl) {
+                    console.log('🎥 إضافة رابط يوتيوب');
                     mediaData = {
                         type: 'youtube',
                         url: uploadForm.youtubeUrl
                     };
-                    await saveScriptData(event.target.result, mediaData);
-                } else {
-                    await saveScriptData(event.target.result, null);
                 }
-            };
-            reader.readAsDataURL(selectedFile);
-        }
 
-        async function saveScriptData(fileData, mediaData) {
-            const scriptData = {
-                title: uploadForm.title,
-                description: uploadForm.description,
-                category: uploadForm.category,
-                fileName: selectedFile.name,
-                fileData: fileData,
-                media: mediaData,
-                uploader: currentUser.email,
-                uploaderUid: currentUser.uid,
-                uploaderName: currentUser.userData?.customName || currentUser.username,
-                date: new Date().toISOString(),
-                stats: { views: 0, downloads: 0, uniqueDownloads: [] }
-            };
+                console.log('📦 إعداد بيانات السكربت...');
+                const scriptData = {
+                    title: uploadForm.title,
+                    description: uploadForm.description,
+                    category: uploadForm.category,
+                    fileName: selectedFile.name,
+                    fileData: fileData,
+                    media: mediaData,
+                    uploader: currentUser.email,
+                    uploaderUid: currentUser.uid,
+                    uploaderName: currentUser.userData?.customName || currentUser.username,
+                    date: new Date().toISOString(),
+                    stats: { views: 0, downloads: 0, uniqueDownloads: [] }
+                };
 
-            const success = await saveScriptToFirestore(scriptData);
-            if (success) {
+                console.log('💾 الحفظ في Firestore...');
+                await saveScriptToFirestore(scriptData);
+                
+                console.log('🎉 تم النشر بنجاح!');
+                
+                // إغلاق النافذة وإعادة التعيين
                 showUpload = false;
                 resetUpload();
-                alert('✅ تم نشر السكربت بنجاح!');
+                render();
+                
+                setTimeout(() => {
+                    alert('✅ تم نشر السكربت بنجاح!');
+                }, 100);
+                
+            } catch (error) {
+                console.error('❌ خطأ في النشر:', error);
+                alert("❌ فشل النشر: " + error.message);
+                
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'نشر المحتوى';
+                }
             }
+        }
+
+        function readFileAsDataURL(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                
+                reader.onload = (e) => {
+                    console.log('✅ FileReader: تم قراءة الملف بنجاح');
+                    resolve(e.target.result);
+                };
+                
+                reader.onerror = (e) => {
+                    console.error('❌ FileReader: فشل في قراءة الملف');
+                    reject(new Error('فشل في قراءة الملف'));
+                };
+                
+                reader.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const percent = (e.loaded / e.total * 100).toFixed(0);
+                        console.log(`📊 قراءة الملف: ${percent}%`);
+                    }
+                };
+                
+                reader.readAsDataURL(file);
+            });
         }
 
         async function viewDetails(scriptId) {
             currentScriptId = scriptId;
             const script = scripts.find(s => s.id === scriptId);
             if (script) {
-                script.stats.views++;
-                await updateScriptStats(scriptId, { 'stats.views': script.stats.views });
-                currentPage = 'scriptDetails';
-                downloadTimer = null;
-                downloadTimeLeft = 60;
-                window.scrollTo(0, 0);
-                render();
+                try {
+                    script.stats.views++;
+                    await updateScriptStats(scriptId, { 'stats.views': script.stats.views });
+                    currentPage = 'scriptDetails';
+                    downloadTimer = null;
+                    downloadTimeLeft = 60;
+                    window.scrollTo(0, 0);
+                    render();
+                } catch (error) {
+                    console.error('خطأ في تحديث المشاهدات:', error);
+                    currentPage = 'scriptDetails';
+                    render();
+                }
             }
         }
 
@@ -528,40 +503,50 @@
                 return alert("⚠️ لقد قمت بتحميل هذا السكربت مسبقاً");
             }
 
-            s.stats.uniqueDownloads.push(currentUser.uid);
-            s.stats.downloads++;
-            
-            await updateScriptStats(id, {
-                'stats.downloads': s.stats.downloads,
-                'stats.uniqueDownloads': s.stats.uniqueDownloads
-            });
+            try {
+                s.stats.uniqueDownloads.push(currentUser.uid);
+                s.stats.downloads++;
+                
+                await updateScriptStats(id, {
+                    'stats.downloads': s.stats.downloads,
+                    'stats.uniqueDownloads': s.stats.uniqueDownloads
+                });
 
-            const link = document.createElement('a');
-            link.href = s.fileData;
-            link.download = s.fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+                const link = document.createElement('a');
+                link.href = s.fileData;
+                link.download = s.fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
 
-            alert(`✅ تم تحميل: ${s.title}`);
+                alert(`✅ تم تحميل: ${s.title}`);
+            } catch (error) {
+                console.error('خطأ في التحميل:', error);
+                alert('❌ فشل في تحديث إحصائيات التحميل');
+            }
         }
 
         async function updateUserName(newName) {
             if (!currentUser || !newName) return;
             
-            const userData = await getUserDataFromFirestore(currentUser.uid);
-            if (userData.nameChanged) {
-                return alert("⚠️ لا يمكنك تغيير الاسم مرة أخرى");
-            }
+            try {
+                const userData = await getUserDataFromFirestore(currentUser.uid);
+                if (userData.nameChanged) {
+                    return alert("⚠️ لا يمكنك تغيير الاسم مرة أخرى");
+                }
 
-            userData.customName = newName;
-            userData.nameChanged = true;
-            await saveUserDataToFirestore(currentUser.uid, userData);
-            currentUser.userData = userData;
-            localStorage.setItem('hub_user', JSON.stringify(currentUser));
-            
-            alert("✅ تم تحديث الاسم بنجاح!");
-            render();
+                userData.customName = newName;
+                userData.nameChanged = true;
+                await saveUserDataToFirestore(currentUser.uid, userData);
+                currentUser.userData = userData;
+                localStorage.setItem('hub_user', JSON.stringify(currentUser));
+                
+                alert("✅ تم تحديث الاسم بنجاح!");
+                render();
+            } catch (error) {
+                console.error('خطأ في تحديث الاسم:', error);
+                alert('❌ فشل في تحديث الاسم: ' + error.message);
+            }
         }
 
         function resetUpload() {
@@ -580,6 +565,10 @@
             render();
         }
 
+        function retryConnection() {
+            location.reload();
+        }
+
         // ==========================================
         // 6. واجهة المستخدم
         // ==========================================
@@ -591,12 +580,38 @@
             const displayName = currentUser?.userData?.customName || currentUser?.username;
             const currentScript = currentScriptId ? scripts.find(s => s.id === currentScriptId) : null;
 
+            // إذا كان هناك خطأ في Firebase
+            if (firebaseError) {
+                app.innerHTML = `
+                    <div class="flex items-center justify-center min-h-screen p-6">
+                        <div class="glass-card rounded-[40px] p-12 max-w-2xl text-center">
+                            <div class="text-8xl mb-8">❌</div>
+                            <h1 class="text-4xl font-black mb-6 text-red-400">خطأ في الاتصال بقاعدة البيانات</h1>
+                            <p class="text-gray-300 text-lg mb-8 leading-relaxed">${errorMessage}</p>
+                            <div class="space-y-4">
+                                <button onclick="retryConnection()" class="w-full bg-purple-600 hover:bg-purple-700 px-8 py-4 rounded-2xl font-black text-xl transition-all shadow-lg">
+                                    🔄 إعادة المحاولة
+                                </button>
+                                <p class="text-sm text-gray-500">تأكد من:</p>
+                                <ul class="text-sm text-gray-400 space-y-2">
+                                    <li>✓ اتصالك بالإنترنت</li>
+                                    <li>✓ إعدادات Firebase صحيحة</li>
+                                    <li>✓ قواعد Firestore مفعلة</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            // شاشة التحميل
             if (isLoading) {
                 app.innerHTML = `
                     <div class="flex items-center justify-center min-h-screen">
                         <div class="text-center">
                             <div class="loader mx-auto mb-4"></div>
-                            <p class="text-gray-400">جاري التحميل...</p>
+                            <p class="text-gray-400 text-xl">جاري التحميل من Firebase...</p>
                         </div>
                     </div>
                 `;
@@ -935,8 +950,16 @@
                                         </div>
 
                                         ${uploadForm.mediaType === 'image' ? `
-                                            <input type="file" accept="image/*" onchange="handleMedia(event)" class="w-full text-xs text-gray-400 py-3">
-                                            ${selectedMedia ? `<p class="text-green-400 text-sm">✅ تم اختيار: ${selectedMedia.name}</p>` : ''}
+                                            <div>
+                                                <label class="block text-xs text-gray-500 mb-2">اختر صورة (أقصى حد 2MB)</label>
+                                                <input type="file" accept="image/*" onchange="handleMedia(event)" class="w-full text-xs text-gray-400 py-3">
+                                            </div>
+                                            ${selectedMedia ? `
+                                                <div class="mt-2">
+                                                    <p class="text-green-400 text-sm">✅ تم اختيار: ${selectedMedia.name}</p>
+                                                    <p class="text-gray-500 text-xs">الحجم: ${(selectedMedia.size / 1024).toFixed(2)} KB</p>
+                                                </div>
+                                            ` : ''}
                                         ` : uploadForm.mediaType === 'youtube' ? `
                                             <input type="text" value="${uploadForm.youtubeUrl}" placeholder="https://www.youtube.com/watch?v=..." oninput="uploadForm.youtubeUrl=this.value" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:border-purple-500 outline-none transition-all text-sm">
                                         ` : ''}
@@ -955,14 +978,17 @@
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="block text-[10px] font-black text-gray-500 uppercase mb-2 mr-2">ملف السكربت</label>
+                                        <label class="block text-[10px] font-black text-gray-500 uppercase mb-2 mr-2">ملف السكربت (أقصى حد 5MB)</label>
                                         <input type="file" onchange="handleFile(event)" class="w-full text-xs text-gray-400 py-3">
-                                        ${selectedFile ? `<p class="text-green-400 text-xs mt-2">✅ ${selectedFile.name}</p>` : ''}
+                                        ${selectedFile ? `
+                                            <p class="text-green-400 text-xs mt-2">✅ ${selectedFile.name}</p>
+                                            <p class="text-gray-500 text-xs">الحجم: ${(selectedFile.size / 1024).toFixed(2)} KB</p>
+                                        ` : ''}
                                     </div>
                                 </div>
 
                                 <div class="flex gap-4 pt-6">
-                                    <button onclick="submitScript()" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 py-4 rounded-2xl font-black shadow-xl hover:scale-[1.02] transition-transform">نشر المحتوى</button>
+                                    <button id="submitScriptBtn" onclick="submitScript()" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 py-4 rounded-2xl font-black shadow-xl hover:scale-[1.02] transition-transform">نشر المحتوى</button>
                                     <button onclick="showUpload=false;resetUpload();render()" class="px-8 py-4 bg-white/5 rounded-2xl font-bold hover:bg-white/10 transition-all">إلغاء</button>
                                 </div>
                             </div>
