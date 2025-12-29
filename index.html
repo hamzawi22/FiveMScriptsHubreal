@@ -157,15 +157,15 @@
             try {
                 console.log('📤 جاري الاتصال بـ Firestore...');
                 console.log('📊 حجم البيانات:', JSON.stringify(scriptData).length, 'characters');
-                
-                // إضافة timeout
-                const timeoutPromise = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error('انتهت مهلة الاتصال بقاعدة البيانات')), 30000);
+                console.log('🔧 Firebase Config Check:', {
+                    projectId: firebaseConfig.projectId,
+                    hasDb: !!db,
+                    hasAuth: !!auth
                 });
                 
-                const savePromise = db.collection('scripts').add(scriptData);
-                
-                const docRef = await Promise.race([savePromise, timeoutPromise]);
+                // محاولة الحفظ مع معالجة أفضل للأخطاء
+                console.log('💾 بدء عملية الإضافة...');
+                const docRef = await db.collection('scripts').add(scriptData);
                 
                 console.log('✅ تم الحفظ في Firestore - ID:', docRef.id);
                 console.log('🔄 جاري تحديث القائمة...');
@@ -176,8 +176,24 @@
                 return true;
             } catch (error) {
                 console.error('❌ خطأ في Firestore:', error);
-                console.error('❌ تفاصيل الخطأ:', error.code, error.message);
-                throw new Error('فشل الحفظ في قاعدة البيانات: ' + error.message);
+                console.error('❌ كود الخطأ:', error.code);
+                console.error('❌ رسالة الخطأ:', error.message);
+                console.error('❌ Stack:', error.stack);
+                
+                // معالجة الأخطاء المختلفة
+                if (error.code === 'permission-denied') {
+                    throw new Error('permission-denied: ليس لديك صلاحية للكتابة! يجب تعديل قواعد Firestore في Firebase Console');
+                } else if (error.code === 'unavailable') {
+                    throw new Error('unavailable: Firestore غير متاح حالياً. تحقق من الاتصال بالإنترنت');
+                } else if (error.code === 'failed-precondition') {
+                    throw new Error('Firestore Database غير مفعل! افتح Firebase Console وفعل Firestore Database');
+                } else if (error.message && error.message.includes('timeout')) {
+                    throw new Error('timeout: انتهى وقت الاتصال. تحقق من سرعة الإنترنت');
+                } else if (error.message && error.message.includes('network')) {
+                    throw new Error('خطأ في الشبكة. تحقق من اتصالك بالإنترنت');
+                } else {
+                    throw new Error('خطأ في Firestore: ' + (error.message || 'خطأ غير معروف'));
+                }
             }
         }
 
@@ -322,8 +338,13 @@
             selectedFile = e.target.files[0];
             if (selectedFile) {
                 console.log('📄 تم اختيار ملف:', selectedFile.name, selectedFile.size, 'bytes');
-                if (selectedFile.size > 5 * 1024 * 1024) {
-                    alert('⚠️ تحذير: حجم الملف ' + (selectedFile.size / 1024 / 1024).toFixed(2) + ' MB\nالحد الأقصى هو 5MB. قد يفشل الرفع!');
+                const sizeMB = selectedFile.size / 1024 / 1024;
+                const sizeKB = selectedFile.size / 1024;
+                
+                if (selectedFile.size > 1024 * 1024) {
+                    alert('❌ الملف كبير جداً!\n\nالحجم الحالي: ' + sizeMB.toFixed(2) + ' MB (' + sizeKB.toFixed(2) + ' KB)\nالحد الأقصى: 1 MB (1024 KB)\n\nيرجى اختيار ملف أصغر');
+                } else if (selectedFile.size > 800 * 1024) {
+                    alert('⚠️ تحذير!\n\nالملف كبير نوعاً ما: ' + sizeKB.toFixed(2) + ' KB\nننصح باستخدام ملف أصغر من 800 KB لضمان نجاح الرفع');
                 }
             }
             render();
@@ -333,8 +354,10 @@
             selectedMedia = e.target.files[0];
             if (selectedMedia) {
                 console.log('🖼️ تم اختيار صورة:', selectedMedia.name, selectedMedia.size, 'bytes');
-                if (selectedMedia.size > 2 * 1024 * 1024) {
-                    alert('⚠️ تحذير: حجم الصورة ' + (selectedMedia.size / 1024 / 1024).toFixed(2) + ' MB\nالحد الأقصى هو 2MB. قد يفشل الرفع!');
+                const sizeKB = selectedMedia.size / 1024;
+                
+                if (selectedMedia.size > 500 * 1024) {
+                    alert('❌ الصورة كبيرة جداً!\n\nالحجم الحالي: ' + sizeKB.toFixed(2) + ' KB\nالحد الأقصى: 500 KB\n\nيرجى اختيار صورة أصغر أو ضغطها');
                 }
             }
             render();
@@ -352,29 +375,43 @@
                 return;
             }
 
-            // التحقق من حجم الملف (أقل من 5MB)
-            if (selectedFile.size > 5 * 1024 * 1024) {
-                alert("❌ حجم الملف كبير جداً! الحد الأقصى 5MB");
+            // التحقق من حجم الملف (أقل من 1MB فقط)
+            if (selectedFile.size > 1024 * 1024) {
+                alert("❌ حجم الملف كبير جداً!\nالحد الأقصى 1MB (1024 KB)\n\nحجم الملف الحالي: " + (selectedFile.size / 1024).toFixed(2) + " KB");
                 return;
             }
 
             const submitBtn = document.getElementById('submitScriptBtn');
             if (submitBtn) {
                 submitBtn.disabled = true;
-                submitBtn.textContent = '⏳ جاري النشر...';
+                submitBtn.innerHTML = '⏳ جاري النشر...';
             }
 
             try {
                 console.log('📄 قراءة ملف السكربت:', selectedFile.name, selectedFile.size, 'bytes');
-                const fileData = await readFileAsDataURL(selectedFile);
-                console.log('✅ تم قراءة ملف السكربت بنجاح');
+                
+                // قراءة الملف مع timeout
+                const fileData = await Promise.race([
+                    readFileAsDataURL(selectedFile),
+                    new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('انتهى وقت قراءة الملف')), 30000)
+                    )
+                ]);
+                
+                const base64Size = fileData.length;
+                console.log('✅ تم قراءة ملف السكربت - حجم base64:', base64Size, 'characters');
+                
+                // التحقق من حجم base64 (أقل من 800KB بعد التشفير)
+                if (base64Size > 800000) {
+                    throw new Error('الملف كبير جداً بعد التشفير! حاول ملف أصغر.');
+                }
                 
                 let mediaData = null;
                 
                 if (uploadForm.mediaType === 'image' && selectedMedia) {
                     console.log('🖼️ قراءة الصورة:', selectedMedia.name);
-                    if (selectedMedia.size > 2 * 1024 * 1024) {
-                        throw new Error('حجم الصورة كبير جداً! الحد الأقصى 2MB');
+                    if (selectedMedia.size > 500 * 1024) {
+                        throw new Error('حجم الصورة كبير جداً! الحد الأقصى 500KB');
                     }
                     const imageData = await readFileAsDataURL(selectedMedia);
                     mediaData = {
@@ -405,12 +442,25 @@
                     stats: { views: 0, downloads: 0, uniqueDownloads: [] }
                 };
 
+                const totalSize = JSON.stringify(scriptData).length;
+                console.log('📊 حجم البيانات الكلي:', totalSize, 'characters (~' + (totalSize/1024).toFixed(2) + ' KB)');
+                
+                if (totalSize > 1000000) {
+                    throw new Error('حجم البيانات الكلي كبير جداً! الحد الأقصى لـ Firestore هو 1MB');
+                }
+
                 console.log('💾 الحفظ في Firestore...');
-                await saveScriptToFirestore(scriptData);
+                
+                // محاولة الحفظ مع timeout
+                await Promise.race([
+                    saveScriptToFirestore(scriptData),
+                    new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('انتهى وقت الاتصال بـ Firestore. تحقق من الاتصال بالإنترنت')), 60000)
+                    )
+                ]);
                 
                 console.log('🎉 تم النشر بنجاح!');
                 
-                // إغلاق النافذة وإعادة التعيين
                 showUpload = false;
                 resetUpload();
                 render();
@@ -421,12 +471,23 @@
                 
             } catch (error) {
                 console.error('❌ خطأ في النشر:', error);
-                alert("❌ فشل النشر: " + error.message);
+                console.error('❌ تفاصيل الخطأ:', error.code, error.message, error.stack);
+                
+                let errorMsg = "❌ فشل النشر: " + error.message;
+                
+                if (error.message.includes('permission-denied')) {
+                    errorMsg = "❌ خطأ في الصلاحيات!\n\nيجب تعديل قواعد Firestore:\n1. افتح Firebase Console\n2. اذهب لـ Firestore Database\n3. تبويب Rules\n4. استبدل القواعد بـ:\n\nrules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read, write: if true;\n    }\n  }\n}";
+                } else if (error.message.includes('unavailable') || error.message.includes('timeout') || error.message.includes('انتهى وقت')) {
+                    errorMsg = "❌ مشكلة في الاتصال!\n\nتحقق من:\n✓ اتصالك بالإنترنت\n✓ إعدادات Firebase صحيحة\n✓ Firestore مفعل في Firebase Console";
+                }
+                
+                alert(errorMsg);
                 
                 if (submitBtn) {
                     submitBtn.disabled = false;
-                    submitBtn.textContent = 'نشر المحتوى';
+                    submitBtn.innerHTML = 'نشر المحتوى';
                 }
+                render();
             }
         }
 
@@ -951,13 +1012,14 @@
 
                                         ${uploadForm.mediaType === 'image' ? `
                                             <div>
-                                                <label class="block text-xs text-gray-500 mb-2">اختر صورة (أقصى حد 2MB)</label>
+                                                <label class="block text-xs text-gray-500 mb-2">اختر صورة (أقصى حد 500KB)</label>
                                                 <input type="file" accept="image/*" onchange="handleMedia(event)" class="w-full text-xs text-gray-400 py-3">
                                             </div>
                                             ${selectedMedia ? `
                                                 <div class="mt-2">
                                                     <p class="text-green-400 text-sm">✅ تم اختيار: ${selectedMedia.name}</p>
                                                     <p class="text-gray-500 text-xs">الحجم: ${(selectedMedia.size / 1024).toFixed(2)} KB</p>
+                                                    ${selectedMedia.size > 500 * 1024 ? `<p class="text-red-400 text-xs font-bold">⚠️ الصورة كبيرة جداً!</p>` : ''}
                                                 </div>
                                             ` : ''}
                                         ` : uploadForm.mediaType === 'youtube' ? `
@@ -978,11 +1040,12 @@
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="block text-[10px] font-black text-gray-500 uppercase mb-2 mr-2">ملف السكربت (أقصى حد 5MB)</label>
+                                        <label class="block text-[10px] font-black text-gray-500 uppercase mb-2 mr-2">ملف السكربت (أقصى حد 1MB)</label>
                                         <input type="file" onchange="handleFile(event)" class="w-full text-xs text-gray-400 py-3">
                                         ${selectedFile ? `
                                             <p class="text-green-400 text-xs mt-2">✅ ${selectedFile.name}</p>
                                             <p class="text-gray-500 text-xs">الحجم: ${(selectedFile.size / 1024).toFixed(2)} KB</p>
+                                            ${selectedFile.size > 1024 * 1024 ? `<p class="text-red-400 text-xs font-bold">⚠️ الملف كبير جداً!</p>` : ''}
                                         ` : ''}
                                     </div>
                                 </div>
